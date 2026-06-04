@@ -68,11 +68,17 @@ async function doAuth(mode) {
   if (isSignup) showPanel("auth-confirm");
 }
 
-g("btn-signout").onclick = () => db.auth.signOut();
+g("btn-signout").onclick         = () => db.auth.signOut();
+g("btn-signout-sidebar").onclick = () => db.auth.signOut();
 
 db.auth.onAuthStateChange((_e, session) => {
   if (session?.user) {
     S.user = session.user;
+    // Populate sidebar user area
+    const email = session.user.email || "";
+    const initial = (email[0] || "U").toUpperCase();
+    g("user-avatar").textContent = initial;
+    g("user-email").textContent  = email;
     g("auth-overlay").classList.add("hidden");
     g("app").classList.remove("hidden");
     loadAll();
@@ -145,8 +151,29 @@ function renderProjects() {
     ul.appendChild(buildRowItem(p, count, p.id === S.activeProjectId, {
       onClick:  () => { S.activeProjectId = p.id; renderAll(); if (mobile()) openMobilePane("tasks"); },
       onDelete: () => confirmDelete(`Delete project "${p.name}" and all its tasks?`, () => deleteProject(p)),
-    }));
+    }, true));
   });
+}
+
+function updateBreadcrumb() {
+  const folder  = S.folders.find(f => f.id === S.activeFolderId);
+  const project = S.projects.find(p => p.id === S.activeProjectId);
+  const folderEl  = g("crumb-folder");
+  const projectEl = g("crumb-project");
+  const sep = g("crumb-sep");
+  if (folder && project) {
+    folderEl.textContent = folder.name;
+    projectEl.textContent = project.name;
+    sep.classList.remove("hidden");
+  } else if (folder) {
+    folderEl.textContent = folder.name;
+    projectEl.textContent = "";
+    sep.classList.add("hidden");
+  } else {
+    folderEl.textContent = "Tasks";
+    projectEl.textContent = "";
+    sep.classList.add("hidden");
+  }
 }
 
 function renderTasks() {
@@ -154,6 +181,7 @@ function renderTasks() {
   const project = S.projects.find(p => p.id === S.activeProjectId);
   g("tasks-label").textContent = project ? project.name : "Tasks";
   g("btn-add-task").disabled = !project;
+  updateBreadcrumb();
 
   // label filter bar
   const bar = g("label-filter-bar"), chips = g("label-chips");
@@ -166,10 +194,30 @@ function renderTasks() {
     });
   } else { bar.classList.add("hidden"); }
 
-  if (!project) { ul.innerHTML = emptyState(`<svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M5 10h10M5 6h10M5 14h6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>`, "Pick a project", "Select a project to see its tasks"); return; }
+  if (!project) {
+    g("tasks-overview").classList.add("hidden");
+    ul.innerHTML = emptyState(`<svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M5 10h10M5 6h10M5 14h6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>`, "Pick a project", "Select a project to see its tasks");
+    return;
+  }
 
   let items = S.tasks.filter(t => t.project_id === project.id);
   if (S.filterLabels.size) items = items.filter(t => [...S.filterLabels].every(id => (S.taskLabels[t.id]||[]).includes(id)));
+
+  // ── Overview stats (Mapbox usage bar) ──
+  const allInProject = S.tasks.filter(t => t.project_id === project.id);
+  const total   = allInProject.length;
+  const done    = allInProject.filter(t => t.done).length;
+  const today   = new Date(); today.setHours(0,0,0,0);
+  const overdue = allInProject.filter(t => !t.done && t.due_date && new Date(t.due_date + "T00:00:00") < today).length;
+  const ov = g("tasks-overview");
+  if (total > 0) {
+    g("ov-total").textContent   = total;
+    g("ov-done").textContent    = done;
+    g("ov-overdue").textContent = overdue;
+    g("ov-fill").style.width    = (total > 0 ? Math.round((done/total)*100) : 0) + "%";
+    ov.classList.remove("hidden");
+  } else { ov.classList.add("hidden"); }
+
   if (!items.length) { ul.innerHTML = emptyState(`<svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="4" y="4" width="12" height="12" rx="2" stroke="currentColor" stroke-width="1.4"/><path d="M8 10l2 2 3-3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>`, "No tasks yet", "Click + to add your first task"); return; }
 
   items.forEach(t => {
@@ -205,13 +253,24 @@ function renderTasks() {
 }
 
 // ── Row item builder ──────────────────────────────────────────
-function buildRowItem(item, count, active, { onClick, onDelete }) {
+// isProject=true adds a mini progress bar (Mapbox usage-bar style)
+function buildRowItem(item, count, active, { onClick, onDelete }, isProject = false) {
   const li = document.createElement("li");
   li.className = "row-item" + (active ? " active" : "");
   li.onclick = onClick;
 
   const name = document.createElement("span"); name.className = "row-name"; name.textContent = item.name;
-  const cnt  = document.createElement("span"); cnt.className  = "row-count"; cnt.textContent  = String(count);
+
+  // For projects: show done/total ratio instead of plain count
+  const cnt = document.createElement("span"); cnt.className = "row-count";
+  if (isProject) {
+    const projectTasks = S.tasks.filter(t => t.project_id === item.id);
+    const doneCount = projectTasks.filter(t => t.done).length;
+    cnt.textContent = `${doneCount}/${count}`;
+  } else {
+    cnt.textContent = String(count);
+  }
+
   const del  = document.createElement("button"); del.className = "row-del"; del.setAttribute("aria-label","Delete");
   del.innerHTML = `<svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M2 3h9M5 3V2a.5.5 0 01.5-.5h2A.5.5 0 018 2v1M10 3l-.7 7.5H3.7L3 3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
   del.onclick = e => { e.stopPropagation(); onDelete(); };
@@ -224,6 +283,25 @@ function buildRowItem(item, count, active, { onClick, onDelete }) {
   conf.appendChild(yes); conf.appendChild(no);
 
   li.appendChild(name); li.appendChild(cnt); li.appendChild(del); li.appendChild(conf);
+
+  // Project progress bar (Mapbox-style usage bar)
+  if (isProject && count > 0) {
+    const projectTasks = S.tasks.filter(t => t.project_id === item.id);
+    const doneCount = projectTasks.filter(t => t.done).length;
+    const pct = Math.round((doneCount / count) * 100);
+    const track = document.createElement("div"); track.className = "row-progress";
+    const fill  = document.createElement("div"); fill.className  = "row-progress-fill";
+    fill.style.width = pct + "%";
+    track.appendChild(fill);
+    // Insert progress bar as second line inside the li
+    const wrap = document.createElement("div");
+    wrap.style.cssText = "display:flex;flex-direction:column;flex:1;min-width:0;gap:5px;";
+    wrap.appendChild(name);
+    wrap.appendChild(track);
+    li.insertBefore(wrap, li.firstChild);
+    li.removeChild(name); // name already appended to wrap
+  }
+
   return li;
 }
 
