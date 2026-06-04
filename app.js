@@ -1,3 +1,32 @@
+// ── Appearance (theme + accent) ───────────────────────────────
+const html = document.documentElement;
+
+function initAppearance() {
+  const theme  = localStorage.getItem("tb-theme")  || "dark";
+  const accent = localStorage.getItem("tb-accent") || "blue";
+  applyTheme(theme);
+  applyAccent(accent);
+}
+function applyTheme(theme) {
+  html.setAttribute("data-theme", theme);
+  localStorage.setItem("tb-theme", theme);
+  document.querySelectorAll(".sp-theme-btn").forEach(b =>
+    b.classList.toggle("active", b.dataset.t === theme));
+}
+function applyAccent(accent) {
+  html.setAttribute("data-accent", accent);
+  localStorage.setItem("tb-accent", accent);
+  document.querySelectorAll(".sp-swatch").forEach(b =>
+    b.classList.toggle("active", b.dataset.a === accent));
+}
+function toggleStylePanel() {
+  const panel = document.getElementById("style-panel");
+  panel.classList.toggle("hidden");
+}
+
+// Init immediately so there's no flash of wrong theme
+initAppearance();
+
 // ── Config ──────────────────────────────────────────────────
 const SUPABASE_URL      = "https://wgfdozmroijxubuiifjg.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndnZmRvem1yb2lqeHVidWlpZmpnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA1NzIxODgsImV4cCI6MjA5NjE0ODE4OH0.2HFVufskP_O8YvYJiUdxT6cooi0YC21lFxvt4-qpIP4";
@@ -43,6 +72,25 @@ function showPanel(id) {
   document.querySelectorAll(".auth-panel").forEach(p => p.classList.remove("active"));
   g(id).classList.add("active");
 }
+// ── Appearance button wiring ──────────────────────────────────
+document.getElementById("btn-appearance").onclick = (e) => {
+  e.stopPropagation();
+  toggleStylePanel();
+};
+document.querySelectorAll(".sp-theme-btn").forEach(btn =>
+  btn.addEventListener("click", () => applyTheme(btn.dataset.t)));
+document.querySelectorAll(".sp-swatch").forEach(btn =>
+  btn.addEventListener("click", () => applyAccent(btn.dataset.a)));
+// Close panel when clicking outside
+document.addEventListener("click", (e) => {
+  const panel = document.getElementById("style-panel");
+  const trigger = document.getElementById("btn-appearance");
+  if (!panel.classList.contains("hidden") &&
+      !panel.contains(e.target) && e.target !== trigger) {
+    panel.classList.add("hidden");
+  }
+});
+
 g("goto-signup").onclick   = () => showPanel("auth-signup");
 g("goto-signin").onclick   = () => showPanel("auth-signin");
 g("goto-signin-2").onclick = () => showPanel("auth-signin");

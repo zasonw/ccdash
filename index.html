@@ -99,9 +99,46 @@
             <span class="user-email" id="user-email">Loading…</span>
             <span class="user-workspace">Personal workspace</span>
           </div>
+          <button id="btn-appearance" class="user-signout icon-btn" title="Appearance">
+            <svg width="15" height="15" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="8.5" stroke="currentColor" stroke-width="1.5"/><circle cx="10" cy="10" r="3" fill="currentColor"/><path d="M10 1.5V4M10 16v2.5M1.5 10H4M16 10h2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          </button>
           <button id="btn-signout-sidebar" class="user-signout icon-btn" title="Sign out">
             <svg width="15" height="15" viewBox="0 0 18 18" fill="none"><path d="M7 3H3a1 1 0 00-1 1v10a1 1 0 001 1h4M12 12l3-3-3-3M15 9H7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </button>
+        </div>
+
+        <!-- ── Appearance panel ── -->
+        <div id="style-panel" class="style-panel hidden">
+          <div class="sp-head">
+            <svg width="13" height="13" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="8.5" stroke="currentColor" stroke-width="1.5"/><circle cx="10" cy="10" r="3" fill="currentColor"/><path d="M10 1.5V4M10 16v2.5M1.5 10H4M16 10h2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+            Appearance
+          </div>
+
+          <div class="sp-section">
+            <div class="sp-label">Theme</div>
+            <div class="sp-row">
+              <button class="sp-theme-btn" data-t="dark">
+                <svg width="13" height="13" viewBox="0 0 20 20" fill="none"><path d="M17.5 12.5A7.5 7.5 0 017.5 2.5a7.5 7.5 0 100 15 7.5 7.5 0 0010-5z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
+                Dark
+              </button>
+              <button class="sp-theme-btn" data-t="light">
+                <svg width="13" height="13" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="4" stroke="currentColor" stroke-width="1.5"/><path d="M10 2v2M10 16v2M2 10h2M16 10h2M4.22 4.22l1.42 1.42M14.36 14.36l1.42 1.42M4.22 15.78l1.42-1.42M14.36 5.64l1.42-1.42" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+                Light
+              </button>
+            </div>
+          </div>
+
+          <div class="sp-section">
+            <div class="sp-label">Accent color</div>
+            <div class="sp-swatches">
+              <button class="sp-swatch" data-a="blue"    title="Blue"    style="--sw:#5272f5"></button>
+              <button class="sp-swatch" data-a="violet"  title="Violet"  style="--sw:#8b5cf6"></button>
+              <button class="sp-swatch" data-a="emerald" title="Emerald" style="--sw:#10b981"></button>
+              <button class="sp-swatch" data-a="rose"    title="Rose"    style="--sw:#f43f5e"></button>
+              <button class="sp-swatch" data-a="amber"   title="Amber"   style="--sw:#f59e0b"></button>
+              <button class="sp-swatch" data-a="cyan"    title="Cyan"    style="--sw:#06b6d4"></button>
+            </div>
+          </div>
         </div>
 
         <div class="pane-head">
