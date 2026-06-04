@@ -333,6 +333,68 @@ button:disabled { opacity: .4; cursor: not-allowed; transform: none !important; 
 
 .task-chips { display: flex; flex-wrap: wrap; gap: 4px; }
 
+/* ── Due date badge on task cards ── */
+.due-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 11.5px; color: var(--text-3);
+  background: var(--surface-2);
+  padding: 2px 8px; border-radius: 20px;
+  border: 1px solid var(--border);
+}
+.due-badge.overdue { color: var(--danger); background: rgba(255,92,122,.1); border-color: rgba(255,92,122,.25); }
+.due-badge.today   { color: #f5a623;      background: rgba(245,166,35,.1);  border-color: rgba(245,166,35,.25); }
+.due-badge.soon    { color: var(--accent); background: var(--chip-bg);      border-color: rgba(108,143,255,.2); }
+
+/* ── Drawer meta row ── */
+.drawer-meta-row { border-bottom: 1px solid var(--border); padding-bottom: 16px; }
+.meta-field { display: flex; flex-direction: column; gap: 6px; }
+.meta-input { max-width: 180px; padding: 7px 10px; font-size: 13px; color-scheme: dark; }
+
+/* ── New Task Modal ── */
+.modal-overlay {
+  position: fixed; inset: 0; z-index: 60;
+  background: rgba(0,0,0,.55);
+  backdrop-filter: blur(3px);
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px;
+  animation: fadeIn .15s ease;
+}
+.modal-card {
+  background: var(--surface);
+  border: 1px solid var(--border-2);
+  border-radius: 16px;
+  width: 100%; max-width: 480px;
+  box-shadow: 0 20px 60px rgba(0,0,0,.5);
+  animation: modalPop .18s cubic-bezier(.34,1.4,.64,1);
+  overflow: hidden;
+}
+@keyframes modalPop { from { transform: scale(.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+.modal-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 18px 20px 0;
+}
+.modal-head h3 { font-size: 16px; font-weight: 700; }
+.modal-body {
+  padding: 16px 20px;
+  display: flex; flex-direction: column; gap: 16px;
+}
+.modal-foot {
+  display: flex; align-items: center; justify-content: flex-end; gap: 8px;
+  padding: 12px 20px 18px;
+  border-top: 1px solid var(--border);
+}
+
+/* mobile: modal slides up from bottom */
+@media (max-width: 700px) {
+  .modal-overlay { align-items: flex-end; padding: 0; }
+  .modal-card {
+    border-radius: 16px 16px 0 0;
+    max-width: 100%;
+    animation: slideUp .2s ease;
+  }
+}
+
 /* ── Filter bar ── */
 .filter-bar {
   display: flex; align-items: center; gap: 8px;

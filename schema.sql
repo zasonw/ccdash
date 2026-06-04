@@ -26,9 +26,12 @@ create table if not exists tasks (
   project_id uuid not null references projects(id) on delete cascade,
   title text not null,
   notes text,
+  due_date date,
   done boolean default false,
   created_at timestamptz default now()
 );
+-- if the table already exists, add the column safely:
+alter table tasks add column if not exists due_date date;
 
 create table if not exists labels (
   id uuid primary key default gen_random_uuid(),

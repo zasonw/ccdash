@@ -124,6 +124,16 @@
 
         <input id="task-title-input" class="task-title-field" placeholder="Task title…" />
 
+        <div class="drawer-section drawer-meta-row">
+          <div class="meta-field">
+            <label class="section-label">
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><rect x="1" y="2" width="10" height="9" rx="1.5" stroke="currentColor" stroke-width="1.2"/><path d="M3.5 1v2M8.5 1v2M1 5h10" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+              Due date
+            </label>
+            <input id="task-due-input" type="date" class="meta-input" />
+          </div>
+        </div>
+
         <div class="drawer-section">
           <label class="section-label">Notes</label>
           <textarea id="task-notes-input" class="task-notes-field" placeholder="Add notes…" rows="4"></textarea>
@@ -153,6 +163,51 @@
           </button>
         </div>
 
+      </div>
+    </div>
+
+    <!-- NEW TASK MODAL -->
+    <div id="new-task-modal" class="modal-overlay hidden" role="dialog" aria-label="New task">
+      <div class="modal-card">
+        <div class="modal-head">
+          <h3>New Task</h3>
+          <button id="btn-close-modal" class="icon-btn" aria-label="Close">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M12 4L4 12M4 4l8 8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+          </button>
+        </div>
+
+        <div class="modal-body">
+          <div class="field">
+            <label>Task title <span style="color:var(--danger)">*</span></label>
+            <input id="nt-title" type="text" placeholder="What needs to be done?" autocomplete="off" />
+          </div>
+
+          <div class="field">
+            <label>
+              <svg width="13" height="13" viewBox="0 0 13 13" fill="none" style="vertical-align:-1px"><rect x="1" y="2" width="11" height="10" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M4 1v2M9 1v2M1 5h11" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+              Due date <span class="hint">(optional)</span>
+            </label>
+            <input id="nt-due" type="date" />
+          </div>
+
+          <div class="field">
+            <div class="section-row" style="margin-bottom:8px">
+              <label style="margin:0">Labels</label>
+              <button id="btn-nt-new-label" class="btn-text-add">+ New label</button>
+            </div>
+            <div id="nt-label-chips" class="chip-row"></div>
+            <div id="nt-label-form" class="inline-mini-form hidden" style="margin-top:8px">
+              <input id="nt-new-label-input" type="text" placeholder="Label name…" maxlength="30" />
+              <button id="btn-nt-save-label" class="btn-save-mini">Add</button>
+              <button id="btn-nt-cancel-label" class="btn-cancel-mini">Cancel</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-foot">
+          <button id="btn-modal-cancel" class="btn-ghost">Cancel</button>
+          <button id="btn-modal-save" class="btn-primary">Add Task</button>
+        </div>
       </div>
     </div>
 
