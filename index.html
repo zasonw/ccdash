@@ -319,6 +319,15 @@
       </div>
     </div>
 
+    <!-- Notification toast (replaces browser alert) -->
+    <div id="notif-toast" class="notif-toast hidden" role="alert" aria-live="assertive">
+      <svg id="notif-icon" width="16" height="16" viewBox="0 0 16 16" fill="none"></svg>
+      <span id="notif-msg"></span>
+      <button id="notif-close" class="notif-close" aria-label="Dismiss">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M9 3L3 9M3 3l6 6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+
     <!-- Mobile backdrop -->
     <div id="backdrop" class="backdrop hidden"></div>
   </div><!-- /app -->

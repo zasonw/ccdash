@@ -50,6 +50,30 @@ const S = {
 const g = id => document.getElementById(id);
 function setLoading(btn, on) { btn.classList.toggle("loading", on); btn.disabled = on; }
 
+// ── Notification toast (replaces all alert() calls) ───────────
+let _notifTimer;
+const ICONS = {
+  error:   `<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.5"/><path d="M8 5v4M8 11v.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>`,
+  warn:    `<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 2L14.5 13.5H1.5L8 2z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M8 6v4M8 11.5v.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>`,
+  success: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.5"/><path d="M5 8l2.5 2.5L11 5.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+};
+function showNotif(msg, type = "error") {
+  clearTimeout(_notifTimer);
+  const toast = g("notif-toast");
+  g("notif-icon").innerHTML = ICONS[type] || ICONS.error;
+  g("notif-msg").textContent = msg;
+  toast.className = `notif-toast notif-${type}`;
+  // re-trigger animation
+  void toast.offsetWidth;
+  _notifTimer = setTimeout(() => toast.classList.add("hidden"), 6000);
+}
+document.addEventListener("DOMContentLoaded", () => {
+  g("notif-close").onclick = () => {
+    clearTimeout(_notifTimer);
+    g("notif-toast").classList.add("hidden");
+  };
+});
+
 // ── Due date helpers ─────────────────────────────────────────
 function dueBadge(dateStr) {
   if (!dateStr) return null;
@@ -149,7 +173,7 @@ async function loadAll() {
   ]);
   // ④ Check ALL responses — previously only fr.error was checked
   const firstErr = [fr, pr, tr, lr, tlr].find(r => r.error);
-  if (firstErr) { console.error("Load error:", firstErr.error); alert("Failed to load data: " + firstErr.error.message); return; }
+  if (firstErr) { console.error("Load error:", firstErr.error); showNotif("Failed to load data: " + firstErr.error.message); return; }
   S.folders  = fr.data  || [];
   S.projects = pr.data  || [];
   S.tasks    = tr.data  || [];
@@ -433,19 +457,26 @@ function renderModalLabelChips() {
 async function saveModalLabel() {
   const name = g("nt-new-label-input").value.trim(); if (!name) return;
   const { data, error } = await db.from("labels").insert({ name, user_id: S.user.id }).select().single();
-  if (error) return alert(error.message);
+  if (error) return showNotif(error.message);
   S.labels.push(data);
   g("nt-label-form").classList.add("hidden");
   g("nt-new-label-input").value = "";
   renderModalLabelChips();
 }
 async function saveNewTask() {
-  const title   = g("nt-title").value.trim();
+  const title    = g("nt-title").value.trim();
   const due_date = g("nt-due").value || null;
   if (!title) { g("nt-title").focus(); g("nt-title").style.borderBottomColor = "var(--danger)"; return; }
   g("btn-modal-save").disabled = true; g("btn-modal-save").textContent = "Adding…";
-  const { data, error } = await db.from("tasks").insert({ title, due_date, project_id: S.activeProjectId, user_id: S.user.id, done: false }).select().single();
-  if (error) { alert(error.message); g("btn-modal-save").disabled = false; g("btn-modal-save").textContent = "Add Task"; return; }
+  let payload = { title, due_date, project_id: S.activeProjectId, user_id: S.user.id, done: false };
+  let { data, error } = await db.from("tasks").insert(payload).select().single();
+  // Graceful fallback: if due_date column doesn't exist yet, retry without it
+  if (error && error.message && error.message.includes("due_date")) {
+    showNotif("Due dates unavailable — run the database migration to enable them.", "warn");
+    const { due_date: _dd, ...payloadNoDue } = payload;
+    ({ data, error } = await db.from("tasks").insert(payloadNoDue).select().single());
+  }
+  if (error) { showNotif(error.message); g("btn-modal-save").disabled = false; g("btn-modal-save").textContent = "Add Task"; return; }
   S.tasks.push(data);
   // assign labels
   if (S.modalLabels.size) {
@@ -464,12 +495,12 @@ g("btn-add-project").onclick = () => openInlineAdd(g("project-list"), "Project n
 
 async function addFolder(name) {
   const { data, error } = await db.from("folders").insert({ name, user_id: S.user.id }).select().single();
-  if (error) return alert(error.message);
+  if (error) return showNotif(error.message);
   S.folders.push(data); S.activeFolderId = data.id; renderAll();
 }
 async function deleteFolder(f) {
   const { error } = await db.from("folders").delete().eq("id", f.id);
-  if (error) return alert(error.message);
+  if (error) return showNotif(error.message);
   S.folders  = S.folders.filter(x => x.id !== f.id);
   S.projects = S.projects.filter(p => p.folder_id !== f.id);
   if (S.activeFolderId === f.id) { S.activeFolderId = S.folders[0]?.id ?? null; S.activeProjectId = null; }
@@ -477,12 +508,12 @@ async function deleteFolder(f) {
 }
 async function addProject(name) {
   const { data, error } = await db.from("projects").insert({ name, folder_id: S.activeFolderId, user_id: S.user.id }).select().single();
-  if (error) return alert(error.message);
+  if (error) return showNotif(error.message);
   S.projects.push(data); S.activeProjectId = data.id; renderAll();
 }
 async function deleteProject(p) {
   const { error } = await db.from("projects").delete().eq("id", p.id);
-  if (error) return alert(error.message);
+  if (error) return showNotif(error.message);
   S.projects = S.projects.filter(x => x.id !== p.id);
   S.tasks    = S.tasks.filter(t => t.project_id !== p.id);
   if (S.activeProjectId === p.id) S.activeProjectId = null;
@@ -491,7 +522,7 @@ async function deleteProject(p) {
 async function toggleDone(t) {
   const next = !t.done;
   const { error } = await db.from("tasks").update({ done: next }).eq("id", t.id);
-  if (error) return alert(error.message);
+  if (error) return showNotif(error.message);
   t.done = next; renderTasks();
   if (S.activeTaskId === t.id) {
     g("btn-toggle-done").classList.toggle("done-active", next);
@@ -501,7 +532,7 @@ async function toggleDone(t) {
 async function deleteTask() {
   const t = S.tasks.find(x => x.id === S.activeTaskId); if (!t) return;
   const { error } = await db.from("tasks").delete().eq("id", t.id);
-  if (error) return alert(error.message);
+  if (error) return showNotif(error.message);
   S.tasks = S.tasks.filter(x => x.id !== t.id);
   delete S.taskLabels[t.id];
   closeDrawer(); renderTasks(); renderProjects();
@@ -565,8 +596,13 @@ async function saveDrawerFields() {
   const title    = g("task-title-input").value.trim() || "Untitled";
   const notes    = g("task-notes-input").value;
   const due_date = g("task-due-input").value || null;
-  const { error } = await db.from("tasks").update({ title, notes, due_date }).eq("id", t.id);
-  if (error) return;
+  let payload = { title, notes, due_date };
+  let { error } = await db.from("tasks").update(payload).eq("id", t.id);
+  // Graceful fallback: if due_date column doesn't exist yet, save without it
+  if (error && error.message && error.message.includes("due_date")) {
+    ({ error } = await db.from("tasks").update({ title, notes }).eq("id", t.id));
+  }
+  if (error) { showNotif(error.message); return; }
   t.title = title; t.notes = notes; t.due_date = due_date;
   renderTasks();
 }
@@ -595,11 +631,11 @@ async function toggleTaskLabel(taskId, labelId) {
   const list = (S.taskLabels[taskId] ||= []);
   if (list.includes(labelId)) {
     const { error } = await db.from("task_labels").delete().eq("task_id", taskId).eq("label_id", labelId);
-    if (error) return alert(error.message);
+    if (error) return showNotif(error.message);
     S.taskLabels[taskId] = list.filter(x => x !== labelId);
   } else {
     const { error } = await db.from("task_labels").insert({ task_id: taskId, label_id: labelId, user_id: S.user.id });
-    if (error) return alert(error.message);
+    if (error) return showNotif(error.message);
     list.push(labelId);
   }
   renderDrawerLabels(); renderTasks();
@@ -615,7 +651,7 @@ g("new-label-input").addEventListener("keydown", e => {
 async function saveDrawerLabel() {
   const name = g("new-label-input").value.trim(); if (!name) return;
   const { data, error } = await db.from("labels").insert({ name, user_id: S.user.id }).select().single();
-  if (error) return alert(error.message);
+  if (error) return showNotif(error.message);
   S.labels.push(data);
   g("add-label-form").classList.add("hidden"); g("new-label-input").value = "";
   renderDrawerLabels(); renderTasks();
