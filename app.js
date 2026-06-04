@@ -106,10 +106,21 @@ async function loadAll() {
 // ── Render ────────────────────────────────────────────────────
 function renderAll() { renderFolders(); renderProjects(); renderTasks(); }
 
+function emptyState(icon, title, hint) {
+  return `<div class="empty-state">
+    <div class="empty-icon">${icon}</div>
+    <strong>${title}</strong>
+    <span>${hint}</span>
+  </div>`;
+}
+
 function renderFolders() {
   const ul = g("folder-list"); ul.innerHTML = "";
   if (!S.folders.length) {
-    ul.innerHTML = `<div class="empty-state"><strong>No folders yet</strong>Click + to create your first folder</div>`;
+    ul.innerHTML = emptyState(
+      `<svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M2 5.5A1.5 1.5 0 013.5 4h4l2 2h7A1.5 1.5 0 0118 7.5v8A1.5 1.5 0 0116.5 17h-13A1.5 1.5 0 012 15.5v-10z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>`,
+      "No folders yet", "Click + to create your first folder"
+    );
     return;
   }
   S.folders.forEach(f => {
@@ -126,9 +137,9 @@ function renderProjects() {
   const folder = S.folders.find(f => f.id === S.activeFolderId);
   g("projects-label").textContent = folder ? folder.name : "Projects";
   g("btn-add-project").disabled = !folder;
-  if (!folder) { ul.innerHTML = `<div class="empty-state">Select a folder</div>`; return; }
+  if (!folder) { ul.innerHTML = emptyState(`<svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 4l6 4v8H4V8l6-4z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>`, "Pick a folder", "Select a folder on the left"); return; }
   const items = S.projects.filter(p => p.folder_id === folder.id);
-  if (!items.length) { ul.innerHTML = `<div class="empty-state"><strong>No projects yet</strong>Click + to create one</div>`; return; }
+  if (!items.length) { ul.innerHTML = emptyState(`<svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="3" y="5" width="14" height="11" rx="1.5" stroke="currentColor" stroke-width="1.4"/><path d="M7 5V4a1 1 0 011-1h4a1 1 0 011 1v1" stroke="currentColor" stroke-width="1.4"/></svg>`, "No projects yet", "Click + to create one"); return; }
   items.forEach(p => {
     const count = S.tasks.filter(t => t.project_id === p.id).length;
     ul.appendChild(buildRowItem(p, count, p.id === S.activeProjectId, {
@@ -155,11 +166,11 @@ function renderTasks() {
     });
   } else { bar.classList.add("hidden"); }
 
-  if (!project) { ul.innerHTML = `<div class="empty-state">Select a project</div>`; return; }
+  if (!project) { ul.innerHTML = emptyState(`<svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M5 10h10M5 6h10M5 14h6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>`, "Pick a project", "Select a project to see its tasks"); return; }
 
   let items = S.tasks.filter(t => t.project_id === project.id);
   if (S.filterLabels.size) items = items.filter(t => [...S.filterLabels].every(id => (S.taskLabels[t.id]||[]).includes(id)));
-  if (!items.length) { ul.innerHTML = `<div class="empty-state"><strong>No tasks yet</strong>Click + to add one</div>`; return; }
+  if (!items.length) { ul.innerHTML = emptyState(`<svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="4" y="4" width="12" height="12" rx="2" stroke="currentColor" stroke-width="1.4"/><path d="M8 10l2 2 3-3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>`, "No tasks yet", "Click + to add your first task"); return; }
 
   items.forEach(t => {
     const li = document.createElement("li");
