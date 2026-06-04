@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#080d1a" />
+  <title>Task Board</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <!-- ── AUTH ── -->
+  <div id="auth-overlay" class="auth-overlay">
+    <div class="auth-card">
+      <div class="auth-logo">
+        <span class="logo-mark">T</span>
+        <span class="logo-text">TaskBoard</span>
+      </div>
+
+      <div id="auth-signin" class="auth-panel active">
+        <h2>Welcome back</h2>
+        <p class="auth-sub">Sign in to your workspace</p>
+        <div class="field">
+          <label>Email</label>
+          <input id="si-email" type="email" placeholder="you@example.com" autocomplete="email" />
+        </div>
+        <div class="field">
+          <label>Password</label>
+          <input id="si-password" type="password" placeholder="••••••••" autocomplete="current-password" />
+        </div>
+        <button id="btn-signin" class="btn-primary full" data-loading="Signing in…">Sign in</button>
+        <p class="auth-msg" id="si-msg"></p>
+        <p class="auth-switch">No account? <button id="goto-signup" class="link-btn">Create one →</button></p>
+      </div>
+
+      <div id="auth-signup" class="auth-panel">
+        <h2>Create account</h2>
+        <p class="auth-sub">Your data stays private and synced</p>
+        <div class="field">
+          <label>Email</label>
+          <input id="su-email" type="email" placeholder="you@example.com" autocomplete="email" />
+        </div>
+        <div class="field">
+          <label>Password <span class="hint">min 6 chars</span></label>
+          <input id="su-password" type="password" placeholder="••••••••" autocomplete="new-password" />
+        </div>
+        <button id="btn-signup" class="btn-primary full" data-loading="Creating…">Create account</button>
+        <p class="auth-msg" id="su-msg"></p>
+        <p class="auth-switch">Have an account? <button id="goto-signin" class="link-btn">Sign in →</button></p>
+      </div>
+
+      <div id="auth-confirm" class="auth-panel">
+        <div class="confirm-icon">📬</div>
+        <h2>Check your email</h2>
+        <p class="auth-sub">We sent a confirmation link. Click it, then come back to sign in.</p>
+        <button id="goto-signin-2" class="btn-primary full">Back to sign in</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── APP ── -->
+  <div id="app" class="app hidden">
+
+    <!-- Mobile top bar -->
+    <header class="topbar">
+      <button id="btn-menu" class="icon-btn" aria-label="Menu">
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><rect y="3" width="18" height="2" rx="1" fill="currentColor"/><rect y="8" width="18" height="2" rx="1" fill="currentColor"/><rect y="13" width="18" height="2" rx="1" fill="currentColor"/></svg>
+      </button>
+      <h2 id="crumb" class="crumb"></h2>
+      <button id="btn-signout" class="icon-btn" title="Sign out">
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M7 3H3a1 1 0 00-1 1v10a1 1 0 001 1h4M12 12l3-3-3-3M15 9H7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </header>
+
+    <div class="layout">
+
+      <!-- FOLDERS -->
+      <aside id="sidebar" class="pane pane-folders">
+        <div class="pane-head">
+          <span class="pane-label">Folders</span>
+          <button id="btn-add-folder" class="btn-icon-add" title="New folder">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          </button>
+        </div>
+        <ul id="folder-list" class="item-list" role="list"></ul>
+      </aside>
+
+      <!-- PROJECTS -->
+      <section id="projects-pane" class="pane pane-projects">
+        <div class="pane-head">
+          <span class="pane-label" id="projects-label">Projects</span>
+          <button id="btn-add-project" class="btn-icon-add" title="New project" disabled>
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          </button>
+        </div>
+        <ul id="project-list" class="item-list" role="list"></ul>
+      </section>
+
+      <!-- TASKS -->
+      <section id="tasks-pane" class="pane pane-tasks">
+        <div class="pane-head">
+          <span class="pane-label" id="tasks-label">Tasks</span>
+          <button id="btn-add-task" class="btn-icon-add" title="New task" disabled>
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          </button>
+        </div>
+        <div id="label-filter-bar" class="filter-bar hidden">
+          <svg class="filter-icon" width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M1 2h11l-4 5v4l-3-1.5V7L1 2z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>
+          <div id="label-chips" class="chip-row"></div>
+        </div>
+        <ul id="task-list" class="item-list task-list" role="list"></ul>
+      </section>
+
+    </div><!-- /layout -->
+
+    <!-- TASK DRAWER -->
+    <div id="drawer" class="drawer hidden" role="dialog" aria-label="Task detail">
+      <div class="drawer-inner">
+        <div class="drawer-top">
+          <button id="btn-close-drawer" class="icon-btn" aria-label="Close">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M12 4L4 12M4 4l8 8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+          </button>
+        </div>
+
+        <input id="task-title-input" class="task-title-field" placeholder="Task title…" />
+
+        <div class="drawer-section">
+          <label class="section-label">Notes</label>
+          <textarea id="task-notes-input" class="task-notes-field" placeholder="Add notes…" rows="4"></textarea>
+        </div>
+
+        <div class="drawer-section">
+          <div class="section-row">
+            <label class="section-label">Labels</label>
+            <button id="btn-add-label" class="btn-text-add">+ New label</button>
+          </div>
+          <div id="drawer-label-list" class="chip-row spaced"></div>
+          <div id="add-label-form" class="inline-mini-form hidden">
+            <input id="new-label-input" type="text" placeholder="Label name…" maxlength="30" />
+            <button id="btn-save-label" class="btn-save-mini">Add</button>
+            <button id="btn-cancel-label" class="btn-cancel-mini">Cancel</button>
+          </div>
+        </div>
+
+        <div class="drawer-actions">
+          <button id="btn-toggle-done" class="btn-ghost">
+            <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><circle cx="7.5" cy="7.5" r="6.5" stroke="currentColor" stroke-width="1.5"/><path d="M5 7.5l2 2 3-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span id="toggle-done-label">Mark done</span>
+          </button>
+          <button id="btn-delete-task" class="btn-danger-text">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 3.5h10M5 3.5V2.5a.5.5 0 01.5-.5h3a.5.5 0 01.5.5v1M11 3.5l-.8 8H3.8L3 3.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Delete task
+          </button>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Delete confirm toast (reused for folder/project) -->
+    <div id="delete-toast" class="delete-toast hidden" role="alertdialog">
+      <span id="delete-toast-msg">Delete this?</span>
+      <div class="toast-actions">
+        <button id="btn-delete-cancel" class="toast-btn-cancel">Cancel</button>
+        <button id="btn-delete-confirm" class="toast-btn-confirm">Delete</button>
+      </div>
+    </div>
+
+    <!-- Mobile backdrop -->
+    <div id="backdrop" class="backdrop hidden"></div>
+  </div><!-- /app -->
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="app.js"></script>
+</body>
+</html>
