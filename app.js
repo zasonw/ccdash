@@ -82,11 +82,12 @@ document.querySelectorAll(".sp-theme-btn").forEach(btn =>
 document.querySelectorAll(".sp-swatch").forEach(btn =>
   btn.addEventListener("click", () => applyAccent(btn.dataset.a)));
 // Close panel when clicking outside
+// Use trigger.contains() so clicks on the SVG *inside* the button don't count as "outside"
 document.addEventListener("click", (e) => {
   const panel = document.getElementById("style-panel");
   const trigger = document.getElementById("btn-appearance");
   if (!panel.classList.contains("hidden") &&
-      !panel.contains(e.target) && e.target !== trigger) {
+      !panel.contains(e.target) && !trigger.contains(e.target)) {
     panel.classList.add("hidden");
   }
 });
