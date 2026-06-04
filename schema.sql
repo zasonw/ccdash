@@ -59,4 +59,13 @@ create policy "own folders"     on folders     for all using (auth.uid() = user_
 create policy "own projects"    on projects    for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 create policy "own tasks"       on tasks       for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 create policy "own labels"      on labels      for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
-create policy "own task_labels" on task_labels for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+-- ⑤ Strengthened: also verify task_id and label_id belong to this user,
+--    preventing cross-user data association (e.g. linking another user's label).
+create policy "own task_labels" on task_labels
+  for all
+  using  (auth.uid() = user_id)
+  with check (
+    auth.uid() = user_id
+    AND exists (select 1 from tasks   where id = task_id   and user_id = auth.uid())
+    AND exists (select 1 from labels  where id = label_id  and user_id = auth.uid())
+  );

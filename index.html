@@ -4,6 +4,17 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#080d1a" />
+  <!-- ① CSP: lock down what can execute / connect -->
+  <meta http-equiv="Content-Security-Policy" content="
+    default-src  'self';
+    script-src   'self' https://cdn.jsdelivr.net;
+    connect-src  'self' https://*.supabase.co wss://*.supabase.co;
+    style-src    'self' 'unsafe-inline';
+    img-src      'self' data:;
+    font-src     'self';
+    object-src   'none';
+    base-uri     'self';
+  ">
   <title>Task Board</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
@@ -230,7 +241,7 @@
         <div class="modal-body">
           <div class="field">
             <label>Task title <span style="color:var(--danger)">*</span></label>
-            <input id="nt-title" type="text" placeholder="What needs to be done?" autocomplete="off" />
+            <input id="nt-title" type="text" placeholder="What needs to be done?" autocomplete="off" maxlength="200" />
           </div>
 
           <div class="field">
@@ -275,7 +286,11 @@
     <div id="backdrop" class="backdrop hidden"></div>
   </div><!-- /app -->
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- ② Pinned version + SRI hash — prevents CDN-compromise attacks -->
+  <script
+    src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js"
+    integrity="sha384-2zrRDgDHSYB/GN3nFW3fsZXoxEhKIr3N2h63Tc6DEOB9JJdFIu8xMJT2Cph/gBil"
+    crossorigin="anonymous"></script>
   <script src="app.js"></script>
 </body>
 </html>

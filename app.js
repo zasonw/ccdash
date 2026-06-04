@@ -98,11 +98,13 @@ async function loadAll() {
     db.from("labels").select("*").order("created_at"),
     db.from("task_labels").select("*"),
   ]);
-  if (fr.error) { alert("Load error: " + fr.error.message); return; }
-  S.folders  = fr.data || [];
-  S.projects = pr.data || [];
-  S.tasks    = tr.data || [];
-  S.labels   = lr.data || [];
+  // ④ Check ALL responses — previously only fr.error was checked
+  const firstErr = [fr, pr, tr, lr, tlr].find(r => r.error);
+  if (firstErr) { console.error("Load error:", firstErr.error); alert("Failed to load data: " + firstErr.error.message); return; }
+  S.folders  = fr.data  || [];
+  S.projects = pr.data  || [];
+  S.tasks    = tr.data  || [];
+  S.labels   = lr.data  || [];
   S.taskLabels = {};
   (tlr.data || []).forEach(({ task_id, label_id }) => { (S.taskLabels[task_id] ||= []).push(label_id); });
   if (!S.activeFolderId && S.folders[0]) S.activeFolderId = S.folders[0].id;
@@ -457,16 +459,29 @@ async function deleteTask() {
 }
 
 // ── Delete confirm toast ──────────────────────────────────────
+// ③ Race-condition fix: dismiss any in-progress toast before showing a new one,
+//    so rapid back-to-back calls never leave S.pendingDelete pointing at the wrong action.
 function confirmDelete(msg, onConfirm) {
-  g("delete-toast-msg").textContent = msg;
-  S.pendingDelete = onConfirm;
-  g("delete-toast").classList.remove("hidden");
+  // Cancel any pending delete that hasn't been confirmed yet
+  S.pendingDelete = null;
+  g("delete-toast").classList.add("hidden");
+  // Small delay so the hide/show is visible if re-triggered immediately
+  requestAnimationFrame(() => {
+    g("delete-toast-msg").textContent = msg;
+    S.pendingDelete = onConfirm;
+    g("delete-toast").classList.remove("hidden");
+  });
 }
 g("btn-delete-confirm").onclick = async () => {
+  const cb = S.pendingDelete;
+  S.pendingDelete = null;                     // clear before await — prevents double-fire
   g("delete-toast").classList.add("hidden");
-  if (S.pendingDelete) { await S.pendingDelete(); S.pendingDelete = null; }
+  if (cb) await cb();
 };
-g("btn-delete-cancel").onclick = () => { g("delete-toast").classList.add("hidden"); S.pendingDelete = null; };
+g("btn-delete-cancel").onclick = () => {
+  S.pendingDelete = null;
+  g("delete-toast").classList.add("hidden");
+};
 
 // ── Task drawer ───────────────────────────────────────────────
 function openDrawer(id) {
@@ -559,22 +574,24 @@ async function saveDrawerLabel() {
 
 // ── Mobile nav ────────────────────────────────────────────────
 function mobile() { return window.matchMedia("(max-width:700px)").matches; }
+
+// ⑥ Fixed: g("crumb") no longer exists after the breadcrumb refactor.
+//    updateBreadcrumb() now owns all crumb state; openMobilePane only
+//    controls which pane is visible.
 function openMobilePane(which) {
   const sb = g("sidebar"), pp = g("projects-pane"), bd = g("backdrop");
   if (which === "folders") {
     sb.classList.add("open"); pp.classList.remove("open"); bd.classList.remove("hidden");
-    g("crumb").textContent = "Folders";
   } else if (which === "projects") {
     sb.classList.remove("open"); pp.classList.add("open"); bd.classList.remove("hidden");
-    g("crumb").textContent = S.folders.find(f => f.id === S.activeFolderId)?.name || "Projects";
   } else {
     sb.classList.remove("open"); pp.classList.remove("open"); bd.classList.add("hidden");
-    g("crumb").textContent = S.projects.find(p => p.id === S.activeProjectId)?.name || "Tasks";
   }
+  updateBreadcrumb();
 }
 g("btn-menu").onclick = () => {
   const open = g("sidebar").classList.contains("open") || g("projects-pane").classList.contains("open");
   open ? openMobilePane("tasks") : openMobilePane("folders");
 };
 g("backdrop").onclick = () => openMobilePane("tasks");
-window.addEventListener("DOMContentLoaded", () => { g("crumb").textContent = "Tasks"; });
+window.addEventListener("DOMContentLoaded", () => updateBreadcrumb());
