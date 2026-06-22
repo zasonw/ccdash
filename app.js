@@ -43,6 +43,7 @@ const S = {
   activeProjectId: null,
   activeTaskId:    null,
   filterLabels:    new Set(),
+  taskSort:        "created",
   pendingDelete:   null,
   // new-task modal selected labels
   modalLabels:     new Set(),
@@ -59,6 +60,13 @@ const WORKFLOW_LABELS = {
   review: "Review",
   done: "Done",
 };
+const SORT_LABELS = {
+  created: "Newest first",
+  due: "Due date",
+  progress: "Highest progress",
+  workflow: "Workflow stage",
+};
+const WORKFLOW_ORDER = { backlog: 0, next: 1, in_progress: 2, review: 3, done: 4 };
 const clampProgress = value => Math.max(0, Math.min(100, Number(value) || 0));
 const taskProgress = task => clampProgress(task.progress ?? (task.done ? 100 : 0));
 const taskWorkflow = task => task.workflow || (task.done ? "done" : "backlog");
@@ -159,6 +167,15 @@ document.querySelectorAll(".sp-theme-btn").forEach(btn =>
   btn.addEventListener("click", () => applyTheme(btn.dataset.t)));
 document.querySelectorAll(".sp-swatch").forEach(btn =>
   btn.addEventListener("click", () => applyAccent(btn.dataset.a)));
+document.querySelectorAll(".sort-chip").forEach(btn =>
+  btn.addEventListener("click", () => {
+    S.taskSort = btn.dataset.sort || "created";
+    renderTasks();
+  }));
+g("btn-clear-filters").onclick = () => {
+  S.filterLabels.clear();
+  renderTasks();
+};
 // Close panel when clicking outside
 // Use trigger.contains() so clicks on the SVG *inside* the button don't count as "outside"
 document.addEventListener("click", (e) => {
@@ -314,6 +331,24 @@ function updateBreadcrumb() {
   }
 }
 
+function sortTasks(items) {
+  const list = [...items];
+  if (S.taskSort === "due") {
+    return list.sort((a, b) => {
+      const av = a.due_date ? new Date(a.due_date + "T00:00:00").getTime() : Number.POSITIVE_INFINITY;
+      const bv = b.due_date ? new Date(b.due_date + "T00:00:00").getTime() : Number.POSITIVE_INFINITY;
+      return av - bv || new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    });
+  }
+  if (S.taskSort === "progress") {
+    return list.sort((a, b) => taskProgress(b) - taskProgress(a) || new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+  }
+  if (S.taskSort === "workflow") {
+    return list.sort((a, b) => (WORKFLOW_ORDER[taskWorkflow(a)] ?? 0) - (WORKFLOW_ORDER[taskWorkflow(b)] ?? 0) || taskProgress(b) - taskProgress(a));
+  }
+  return list.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+}
+
 function renderTasks() {
   const ul = g("task-list"); ul.innerHTML = "";
   const project = S.projects.find(p => p.id === S.activeProjectId);
@@ -340,9 +375,25 @@ function renderTasks() {
     bar.classList.remove("hidden");
     S.labels.forEach(l => {
       const on = S.filterLabels.has(l.id);
-      chips.appendChild(mkChip(l.name, on, () => { on ? S.filterLabels.delete(l.id) : S.filterLabels.add(l.id); renderTasks(); }));
+      const count = S.tasks.filter(t => t.project_id === project?.id && (S.taskLabels[t.id] || []).includes(l.id)).length;
+      const chip = mkChip(`${l.name}${count ? ` ${count}` : ""}`, on, () => { on ? S.filterLabels.delete(l.id) : S.filterLabels.add(l.id); renderTasks(); });
+      if (on) chip.setAttribute("aria-pressed", "true");
+      chips.appendChild(chip);
     });
+    g("btn-clear-filters").classList.toggle("hidden", S.filterLabels.size === 0);
   } else { bar.classList.add("hidden"); }
+  const sortBar = g("task-sort-bar");
+  if (project) {
+    sortBar.classList.remove("hidden");
+    document.querySelectorAll(".sort-chip").forEach(btn => {
+      const active = btn.dataset.sort === S.taskSort;
+      btn.classList.toggle("active", active);
+      btn.setAttribute("aria-pressed", String(active));
+    });
+    g("sort-feedback").textContent = SORT_LABELS[S.taskSort] || SORT_LABELS.created;
+  } else {
+    sortBar.classList.add("hidden");
+  }
 
   if (!project) {
     g("tasks-overview").classList.add("hidden");
@@ -352,6 +403,7 @@ function renderTasks() {
 
   let items = S.tasks.filter(t => t.project_id === project.id);
   if (S.filterLabels.size) items = items.filter(t => [...S.filterLabels].every(id => (S.taskLabels[t.id]||[]).includes(id)));
+  items = sortTasks(items);
 
   // ── Overview stats (Mapbox usage bar) ──
   const allInProject = S.tasks.filter(t => t.project_id === project.id);

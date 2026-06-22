@@ -229,6 +229,15 @@
         <div id="label-filter-bar" class="filter-bar hidden">
           <svg class="filter-icon" width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M1 2h11l-4 5v4l-3-1.5V7L1 2z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>
           <div id="label-chips" class="chip-row"></div>
+          <button id="btn-clear-filters" class="clear-filter-btn hidden" type="button">Clear</button>
+        </div>
+        <div id="task-sort-bar" class="sort-bar hidden" aria-label="Sort tasks">
+          <span class="sort-label">Sort</span>
+          <button class="sort-chip active" type="button" data-sort="created">Newest</button>
+          <button class="sort-chip" type="button" data-sort="due">Due date</button>
+          <button class="sort-chip" type="button" data-sort="progress">Progress</button>
+          <button class="sort-chip" type="button" data-sort="workflow">Workflow</button>
+          <span id="sort-feedback" class="sort-feedback">Newest first</span>
         </div>
         <div id="project-style-bar" class="project-style-bar hidden">
           <label class="project-color-control">

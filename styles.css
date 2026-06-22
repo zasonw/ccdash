@@ -2078,6 +2078,107 @@ html[data-platform="ios"] .user-workspace {
   background: var(--accent-soft);
 }
 
+.item-list li.row-item:hover,
+.task-list li.task-row:hover {
+  outline: 1px solid color-mix(in srgb, var(--project-color, var(--accent-2)) 45%, transparent);
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--project-color, var(--accent-2)) 14%, transparent), transparent 46%),
+    var(--surface-hover);
+}
+
+.item-list li.row-item:hover .row-name,
+.task-list li.task-row:hover .task-name {
+  color: var(--text);
+}
+
+.task-list li.task-row:hover .task-progress-track,
+.item-list li.row-item:hover .row-progress {
+  background: color-mix(in srgb, var(--project-color, var(--accent-2)) 16%, rgba(255,255,255,.08));
+}
+
+.sort-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 48px;
+  padding: 8px 14px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(255, 255, 255, .018);
+  overflow-x: auto;
+}
+
+.sort-label {
+  color: var(--text-3);
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  flex: 0 0 auto;
+}
+
+.sort-chip,
+.clear-filter-btn {
+  min-height: 32px;
+  padding: 6px 11px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .035);
+  color: var(--text-2);
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+  transition: background var(--t-fast), color var(--t-fast), border-color var(--t-fast), transform var(--t-fast);
+}
+
+.sort-chip:hover,
+.clear-filter-btn:hover {
+  color: var(--text);
+  background: var(--surface-hover);
+  transform: translateY(-1px);
+}
+
+.sort-chip.active {
+  color: var(--project-color, var(--accent));
+  border-color: color-mix(in srgb, var(--project-color, var(--accent-2)) 42%, transparent);
+  background: color-mix(in srgb, var(--project-color, var(--accent-2)) 16%, transparent);
+}
+
+.sort-feedback {
+  margin-left: auto;
+  color: var(--text-3);
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.filter-bar {
+  gap: 10px;
+}
+
+.filter-bar .chip.on {
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent-2) 42%, transparent);
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--accent-2) 20%, transparent), transparent),
+    var(--chip-active);
+}
+
+.clear-filter-btn {
+  margin-left: auto;
+  color: var(--danger);
+  border-color: color-mix(in srgb, var(--danger) 32%, transparent);
+  background: var(--danger-soft);
+}
+
+@media (max-width: 700px) {
+  .sort-bar {
+    padding: 8px 10px;
+  }
+
+  .sort-feedback {
+    display: none;
+  }
+}
+
 .row-count,
 .task-percent,
 .project-progress-readout span,
