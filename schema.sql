@@ -70,6 +70,13 @@ alter table task_labels enable row level security;
 alter table task_comments enable row level security;
 
 -- One policy per table: a user only sees/edits their own rows.
+drop policy if exists "own folders" on folders;
+drop policy if exists "own projects" on projects;
+drop policy if exists "own tasks" on tasks;
+drop policy if exists "own labels" on labels;
+drop policy if exists "own task_comments" on task_comments;
+drop policy if exists "own task_labels" on task_labels;
+
 create policy "own folders"     on folders     for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 create policy "own projects"    on projects    for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 create policy "own tasks"       on tasks       for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
