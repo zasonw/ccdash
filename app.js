@@ -36,7 +36,7 @@ const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 // ── State ────────────────────────────────────────────────────
 const S = {
   user: null,
-  folders: [], projects: [], tasks: [], labels: [],
+  folders: [], projects: [], tasks: [], labels: [], comments: [],
   taskLabels: {},
   activeFolderId:  null,
   activeProjectId: null,
@@ -49,6 +49,25 @@ const S = {
 
 const g = id => document.getElementById(id);
 function setLoading(btn, on) { btn.classList.toggle("loading", on); btn.disabled = on; }
+
+const DEFAULT_PROJECT_COLOR = "#4d8dff";
+const WORKFLOW_LABELS = {
+  backlog: "Backlog",
+  next: "Next",
+  in_progress: "In progress",
+  review: "Review",
+  done: "Done",
+};
+const clampProgress = value => Math.max(0, Math.min(100, Number(value) || 0));
+const taskProgress = task => clampProgress(task.progress ?? (task.done ? 100 : 0));
+const taskWorkflow = task => task.workflow || (task.done ? "done" : "backlog");
+const projectColor = project => /^#[0-9a-f]{6}$/i.test(project?.color || "") ? project.color : DEFAULT_PROJECT_COLOR;
+const missingDbFeature = error => /schema cache|column|relation|table|does not exist|Could not find/i.test(error?.message || "");
+function projectProgress(projectId) {
+  const tasks = S.tasks.filter(t => t.project_id === projectId);
+  if (!tasks.length) return 0;
+  return Math.round(tasks.reduce((sum, task) => sum + taskProgress(task), 0) / tasks.length);
+}
 
 // ── Notification toast (replaces all alert() calls) ───────────
 let _notifTimer;
@@ -175,20 +194,28 @@ db.auth.onAuthStateChange((_e, session) => {
 
 // ── Data loading ──────────────────────────────────────────────
 async function loadAll() {
-  const [fr, pr, tr, lr, tlr] = await Promise.all([
+  const [fr, pr, tr, lr, tlr, cr] = await Promise.all([
     db.from("folders").select("*").order("created_at"),
     db.from("projects").select("*").order("created_at"),
     db.from("tasks").select("*").order("created_at"),
     db.from("labels").select("*").order("created_at"),
     db.from("task_labels").select("*"),
+    db.from("task_comments").select("*").order("created_at"),
   ]);
   // ④ Check ALL responses — previously only fr.error was checked
-  const firstErr = [fr, pr, tr, lr, tlr].find(r => r.error);
+  if (cr.error && missingDbFeature(cr.error)) {
+    console.warn("Task comments unavailable until schema.sql is applied:", cr.error);
+    showNotif("Comments unavailable — run the updated schema.sql in Supabase.", "warn");
+    cr.data = [];
+    cr.error = null;
+  }
+  const firstErr = [fr, pr, tr, lr, tlr, cr].find(r => r.error);
   if (firstErr) { console.error("Load error:", firstErr.error); showNotif("Failed to load data: " + firstErr.error.message); return; }
   S.folders  = fr.data  || [];
   S.projects = pr.data  || [];
   S.tasks    = tr.data  || [];
   S.labels   = lr.data  || [];
+  S.comments = cr.data || [];
   S.taskLabels = {};
   (tlr.data || []).forEach(({ task_id, label_id }) => { (S.taskLabels[task_id] ||= []).push(label_id); });
   if (!S.activeFolderId && S.folders[0]) S.activeFolderId = S.folders[0].id;
@@ -268,6 +295,18 @@ function renderTasks() {
   g("tasks-label").textContent = project ? project.name : "Tasks";
   g("btn-add-task").disabled = !project;
   updateBreadcrumb();
+  const styleBar = g("project-style-bar");
+  if (project) {
+    const pct = projectProgress(project.id);
+    styleBar.classList.remove("hidden");
+    styleBar.style.setProperty("--project-color", projectColor(project));
+    g("project-color-input").value = projectColor(project);
+    g("project-progress-percent").textContent = pct + "%";
+    g("tasks-pane").style.setProperty("--project-color", projectColor(project));
+  } else {
+    styleBar.classList.add("hidden");
+    g("tasks-pane").style.removeProperty("--project-color");
+  }
 
   // label filter bar
   const bar = g("label-filter-bar"), chips = g("label-chips");
@@ -300,7 +339,7 @@ function renderTasks() {
     g("ov-total").textContent   = total;
     g("ov-done").textContent    = done;
     g("ov-overdue").textContent = overdue;
-    g("ov-fill").style.width    = (total > 0 ? Math.round((done/total)*100) : 0) + "%";
+    g("ov-fill").style.width    = projectProgress(project.id) + "%";
     ov.classList.remove("hidden");
   } else { ov.classList.add("hidden"); }
 
@@ -309,6 +348,7 @@ function renderTasks() {
   items.forEach(t => {
     const li = document.createElement("li");
     li.className = "task-row" + (t.done ? " done" : "");
+    li.style.setProperty("--project-color", projectColor(project));
     li.onclick = () => openDrawer(t.id);
 
     const top = document.createElement("div");
@@ -322,6 +362,25 @@ function renderTasks() {
     name.textContent = t.title;
     top.appendChild(chk); top.appendChild(name);
     li.appendChild(top);
+
+    const progressRow = document.createElement("div");
+    progressRow.className = "task-progress-row";
+    const workflow = document.createElement("span");
+    workflow.className = "workflow-chip workflow-" + taskWorkflow(t);
+    workflow.textContent = WORKFLOW_LABELS[taskWorkflow(t)] || "Backlog";
+    const pctText = document.createElement("span");
+    pctText.className = "task-percent";
+    pctText.textContent = taskProgress(t) + "%";
+    const track = document.createElement("div");
+    track.className = "task-progress-track";
+    const fill = document.createElement("div");
+    fill.className = "task-progress-fill";
+    fill.style.width = taskProgress(t) + "%";
+    track.appendChild(fill);
+    progressRow.appendChild(workflow);
+    progressRow.appendChild(track);
+    progressRow.appendChild(pctText);
+    li.appendChild(progressRow);
 
     // bottom row: chips + due date
     const lIds = S.taskLabels[t.id] || [];
@@ -343,6 +402,7 @@ function renderTasks() {
 function buildRowItem(item, count, active, { onClick, onDelete }, isProject = false) {
   const li = document.createElement("li");
   li.className = "row-item" + (active ? " active" : "");
+  if (isProject) li.style.setProperty("--project-color", projectColor(item));
   li.onclick = onClick;
 
   const name = document.createElement("span"); name.className = "row-name"; name.textContent = item.name;
@@ -352,7 +412,8 @@ function buildRowItem(item, count, active, { onClick, onDelete }, isProject = fa
   if (isProject) {
     const projectTasks = S.tasks.filter(t => t.project_id === item.id);
     const doneCount = projectTasks.filter(t => t.done).length;
-    cnt.textContent = `${doneCount}/${count}`;
+    cnt.textContent = count ? `${projectProgress(item.id)}%` : "0%";
+    cnt.title = `${doneCount}/${count} tasks done`;
   } else {
     cnt.textContent = String(count);
   }
@@ -374,7 +435,7 @@ function buildRowItem(item, count, active, { onClick, onDelete }, isProject = fa
   if (isProject && count > 0) {
     const projectTasks = S.tasks.filter(t => t.project_id === item.id);
     const doneCount = projectTasks.filter(t => t.done).length;
-    const pct = Math.round((doneCount / count) * 100);
+    const pct = projectProgress(item.id);
     const track = document.createElement("div"); track.className = "row-progress";
     const fill  = document.createElement("div"); fill.className  = "row-progress-fill";
     fill.style.width = pct + "%";
@@ -426,6 +487,15 @@ g("btn-modal-cancel").onclick = closeNewTaskModal;
 g("new-task-modal").addEventListener("click", e => { if (e.target === g("new-task-modal")) closeNewTaskModal(); });
 g("nt-title").addEventListener("keydown", e => { if (e.key === "Enter") saveNewTask(); if (e.key === "Escape") closeNewTaskModal(); });
 g("btn-modal-save").onclick = saveNewTask;
+g("nt-progress").addEventListener("input", () => {
+  g("nt-progress-value").textContent = clampProgress(g("nt-progress").value) + "%";
+});
+g("nt-workflow").addEventListener("change", () => {
+  if (g("nt-workflow").value === "done") {
+    g("nt-progress").value = 100;
+    g("nt-progress-value").textContent = "100%";
+  }
+});
 
 // new label in modal
 g("btn-nt-new-label").onclick = () => { g("nt-label-form").classList.remove("hidden"); g("nt-new-label-input").focus(); };
@@ -441,6 +511,9 @@ function openNewTaskModal() {
   S.modalLabels.clear();
   g("nt-title").value = "";
   g("nt-due").value   = "";
+  g("nt-workflow").value = "backlog";
+  g("nt-progress").value = 0;
+  g("nt-progress-value").textContent = "0%";
   g("nt-label-form").classList.add("hidden");
   g("nt-new-label-input").value = "";
   renderModalLabelChips();
@@ -477,15 +550,22 @@ async function saveModalLabel() {
 async function saveNewTask() {
   const title    = g("nt-title").value.trim();
   const due_date = g("nt-due").value || null;
+  const workflow = g("nt-workflow").value || "backlog";
+  const progress = workflow === "done" ? 100 : clampProgress(g("nt-progress").value);
   if (!title) { g("nt-title").focus(); g("nt-title").style.borderBottomColor = "var(--danger)"; return; }
   g("btn-modal-save").disabled = true; g("btn-modal-save").textContent = "Adding…";
-  let payload = { title, due_date, project_id: S.activeProjectId, user_id: S.user.id, done: false };
+  let payload = { title, due_date, workflow, progress, project_id: S.activeProjectId, user_id: S.user.id, done: workflow === "done" || progress === 100 };
   let { data, error } = await db.from("tasks").insert(payload).select().single();
   // Graceful fallback: if due_date column doesn't exist yet, retry without it
   if (error && error.message && error.message.includes("due_date")) {
     showNotif("Due dates unavailable — run the database migration to enable them.", "warn");
     const { due_date: _dd, ...payloadNoDue } = payload;
     ({ data, error } = await db.from("tasks").insert(payloadNoDue).select().single());
+  }
+  if (error && missingDbFeature(error)) {
+    showNotif("Workflow/progress unavailable — run the updated schema.sql in Supabase.", "warn");
+    const { workflow: _wf, progress: _pg, ...payloadBasic } = payload;
+    ({ data, error } = await db.from("tasks").insert(payloadBasic).select().single());
   }
   if (error) { showNotif(error.message); g("btn-modal-save").disabled = false; g("btn-modal-save").textContent = "Add Task"; return; }
   S.tasks.push(data);
@@ -518,10 +598,30 @@ async function deleteFolder(f) {
   renderAll();
 }
 async function addProject(name) {
-  const { data, error } = await db.from("projects").insert({ name, folder_id: S.activeFolderId, user_id: S.user.id }).select().single();
+  let { data, error } = await db.from("projects").insert({ name, folder_id: S.activeFolderId, user_id: S.user.id, color: DEFAULT_PROJECT_COLOR }).select().single();
+  if (error && missingDbFeature(error)) {
+    showNotif("Project colors unavailable — run the updated schema.sql in Supabase.", "warn");
+    ({ data, error } = await db.from("projects").insert({ name, folder_id: S.activeFolderId, user_id: S.user.id }).select().single());
+  }
   if (error) return showNotif(error.message);
   S.projects.push(data); S.activeProjectId = data.id; renderAll();
 }
+g("project-color-input").addEventListener("input", e => {
+  const p = S.projects.find(x => x.id === S.activeProjectId); if (!p) return;
+  p.color = e.target.value;
+  renderProjects();
+  renderTasks();
+});
+g("project-color-input").addEventListener("change", async e => {
+  const p = S.projects.find(x => x.id === S.activeProjectId); if (!p) return;
+  const color = e.target.value;
+  const { error } = await db.from("projects").update({ color }).eq("id", p.id);
+  if (error) {
+    showNotif(error.message);
+    return;
+  }
+  p.color = color;
+});
 async function deleteProject(p) {
   const { error } = await db.from("projects").delete().eq("id", p.id);
   if (error) return showNotif(error.message);
@@ -532,12 +632,25 @@ async function deleteProject(p) {
 }
 async function toggleDone(t) {
   const next = !t.done;
-  const { error } = await db.from("tasks").update({ done: next }).eq("id", t.id);
+  const payload = next
+    ? { done: true, workflow: "done", progress: 100 }
+    : { done: false, workflow: t.workflow === "done" ? "in_progress" : taskWorkflow(t), progress: Math.min(taskProgress(t), 95) };
+  let savedPayload = payload;
+  let { error } = await db.from("tasks").update(payload).eq("id", t.id);
+  if (error && missingDbFeature(error)) {
+    showNotif("Workflow/progress unavailable — run the updated schema.sql in Supabase.", "warn");
+    savedPayload = { done: next };
+    ({ error } = await db.from("tasks").update({ done: next }).eq("id", t.id));
+  }
   if (error) return showNotif(error.message);
-  t.done = next; renderTasks();
+  Object.assign(t, savedPayload);
+  renderTasks(); renderProjects();
   if (S.activeTaskId === t.id) {
-    g("btn-toggle-done").classList.toggle("done-active", next);
-    g("toggle-done-label").textContent = next ? "Mark not done" : "Mark done";
+    g("btn-toggle-done").classList.toggle("done-active", t.done);
+    g("toggle-done-label").textContent = t.done ? "Mark not done" : "Mark done";
+    g("task-workflow-input").value = taskWorkflow(t);
+    g("task-progress-input").value = taskProgress(t);
+    g("task-progress-value").textContent = taskProgress(t) + "%";
   }
 }
 async function deleteTask() {
@@ -545,6 +658,7 @@ async function deleteTask() {
   const { error } = await db.from("tasks").delete().eq("id", t.id);
   if (error) return showNotif(error.message);
   S.tasks = S.tasks.filter(x => x.id !== t.id);
+  S.comments = S.comments.filter(c => c.task_id !== t.id);
   delete S.taskLabels[t.id];
   closeDrawer(); renderTasks(); renderProjects();
 }
@@ -581,14 +695,18 @@ function openDrawer(id) {
   g("task-title-input").value = t.title;
   g("task-notes-input").value = t.notes || "";
   g("task-due-input").value   = t.due_date || "";
+  g("task-workflow-input").value = taskWorkflow(t);
+  g("task-progress-input").value = taskProgress(t);
+  g("task-progress-value").textContent = taskProgress(t) + "%";
   g("btn-toggle-done").classList.toggle("done-active", t.done);
   g("toggle-done-label").textContent = t.done ? "Mark not done" : "Mark done";
   g("add-label-form").classList.add("hidden");
   g("new-label-input").value = "";
   renderDrawerLabels();
+  renderComments();
   g("drawer").classList.remove("hidden");
 }
-function closeDrawer() { S.activeTaskId = null; g("drawer").classList.add("hidden"); }
+function closeDrawer() { S.activeTaskId = null; g("new-comment-input").value = ""; g("drawer").classList.add("hidden"); }
 
 g("btn-close-drawer").onclick = closeDrawer;
 g("drawer").addEventListener("click", e => { if (e.target === g("drawer")) closeDrawer(); });
@@ -601,21 +719,103 @@ function schedSave() { clearTimeout(_saveTimer); _saveTimer = setTimeout(saveDra
 g("task-title-input").addEventListener("input",  schedSave);
 g("task-notes-input").addEventListener("input",  schedSave);
 g("task-due-input").addEventListener("change",   schedSave);
+g("task-workflow-input").addEventListener("change", () => {
+  if (g("task-workflow-input").value === "done") {
+    g("task-progress-input").value = 100;
+    g("task-progress-value").textContent = "100%";
+  }
+  schedSave();
+});
+g("task-progress-input").addEventListener("input", () => {
+  g("task-progress-value").textContent = clampProgress(g("task-progress-input").value) + "%";
+});
+g("task-progress-input").addEventListener("change", schedSave);
 
 async function saveDrawerFields() {
   const t = S.tasks.find(x => x.id === S.activeTaskId); if (!t) return;
   const title    = g("task-title-input").value.trim() || "Untitled";
   const notes    = g("task-notes-input").value;
   const due_date = g("task-due-input").value || null;
-  let payload = { title, notes, due_date };
+  const workflow = g("task-workflow-input").value || "backlog";
+  const progress = workflow === "done" ? 100 : clampProgress(g("task-progress-input").value);
+  const done = workflow === "done" || progress === 100;
+  let payload = { title, notes, due_date, workflow, progress, done };
+  let savedPayload = payload;
   let { error } = await db.from("tasks").update(payload).eq("id", t.id);
   // Graceful fallback: if due_date column doesn't exist yet, save without it
   if (error && error.message && error.message.includes("due_date")) {
-    ({ error } = await db.from("tasks").update({ title, notes }).eq("id", t.id));
+    savedPayload = { title, notes };
+    ({ error } = await db.from("tasks").update(savedPayload).eq("id", t.id));
+  }
+  if (error && missingDbFeature(error)) {
+    showNotif("Workflow/progress unavailable — run the updated schema.sql in Supabase.", "warn");
+    savedPayload = { title, notes, due_date };
+    ({ error } = await db.from("tasks").update(savedPayload).eq("id", t.id));
+    if (error && error.message && error.message.includes("due_date")) {
+      savedPayload = { title, notes };
+      ({ error } = await db.from("tasks").update(savedPayload).eq("id", t.id));
+    }
   }
   if (error) { showNotif(error.message); return; }
-  t.title = title; t.notes = notes; t.due_date = due_date;
-  renderTasks();
+  Object.assign(t, savedPayload);
+  renderTasks(); renderProjects();
+  g("btn-toggle-done").classList.toggle("done-active", t.done);
+  g("toggle-done-label").textContent = t.done ? "Mark not done" : "Mark done";
+}
+
+// ── Task comments ─────────────────────────────────────────────
+function renderComments() {
+  const list = g("comment-list");
+  const comments = S.comments.filter(c => c.task_id === S.activeTaskId);
+  list.innerHTML = "";
+  g("comment-count").textContent = String(comments.length);
+  if (!comments.length) {
+    list.innerHTML = `<div class="comment-empty">No comments yet.</div>`;
+    return;
+  }
+  comments.forEach(comment => {
+    const item = document.createElement("div");
+    item.className = "comment-item";
+    const body = document.createElement("p");
+    body.textContent = comment.body;
+    const meta = document.createElement("div");
+    meta.className = "comment-meta";
+    const time = document.createElement("span");
+    time.textContent = new Date(comment.created_at).toLocaleString([], { dateStyle: "medium", timeStyle: "short" });
+    const del = document.createElement("button");
+    del.textContent = "Delete";
+    del.onclick = () => deleteComment(comment);
+    meta.appendChild(time);
+    meta.appendChild(del);
+    item.appendChild(body);
+    item.appendChild(meta);
+    list.appendChild(item);
+  });
+}
+
+g("btn-save-comment").onclick = saveComment;
+g("new-comment-input").addEventListener("keydown", e => {
+  if ((e.ctrlKey || e.metaKey) && e.key === "Enter") saveComment();
+});
+
+async function saveComment() {
+  const t = S.tasks.find(x => x.id === S.activeTaskId); if (!t) return;
+  const body = g("new-comment-input").value.trim();
+  if (!body) { g("new-comment-input").focus(); return; }
+  g("btn-save-comment").disabled = true;
+  const { data, error } = await db.from("task_comments").insert({ body, task_id: t.id, user_id: S.user.id }).select().single();
+  g("btn-save-comment").disabled = false;
+  if (error) return showNotif(error.message);
+  S.comments.push(data);
+  g("new-comment-input").value = "";
+  renderComments();
+}
+
+async function deleteComment(comment) {
+  const { error } = await db.from("task_comments").delete().eq("id", comment.id);
+  if (error) return showNotif(error.message);
+  S.comments = S.comments.filter(c => c.id !== comment.id);
+  renderComments();
 }
 
 // ── Drawer labels ─────────────────────────────────────────────

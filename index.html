@@ -229,6 +229,16 @@
           <svg class="filter-icon" width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M1 2h11l-4 5v4l-3-1.5V7L1 2z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>
           <div id="label-chips" class="chip-row"></div>
         </div>
+        <div id="project-style-bar" class="project-style-bar hidden">
+          <label class="project-color-control">
+            <span>Project color</span>
+            <input id="project-color-input" type="color" value="#4d8dff" />
+          </label>
+          <div class="project-progress-readout">
+            <span id="project-progress-percent">0%</span>
+            <small>average progress</small>
+          </div>
+        </div>
         <ul id="task-list" class="item-list task-list" role="list"></ul>
       </section>
 
@@ -253,11 +263,37 @@
             </label>
             <input id="task-due-input" type="date" class="meta-input" />
           </div>
+          <div class="meta-field">
+            <label class="section-label">Workflow</label>
+            <select id="task-workflow-input" class="meta-input">
+              <option value="backlog">Backlog</option>
+              <option value="next">Next</option>
+              <option value="in_progress">In progress</option>
+              <option value="review">Review</option>
+              <option value="done">Done</option>
+            </select>
+          </div>
+          <div class="meta-field progress-field">
+            <label class="section-label">Progress <span id="task-progress-value">0%</span></label>
+            <input id="task-progress-input" type="range" min="0" max="100" step="5" value="0" />
+          </div>
         </div>
 
         <div class="drawer-section">
           <label class="section-label">Notes</label>
           <textarea id="task-notes-input" class="task-notes-field" placeholder="Add notes…" rows="4"></textarea>
+        </div>
+
+        <div class="drawer-section">
+          <div class="section-row">
+            <label class="section-label">Comments</label>
+            <span id="comment-count" class="comment-count">0</span>
+          </div>
+          <div id="comment-list" class="comment-list"></div>
+          <div class="comment-form">
+            <textarea id="new-comment-input" placeholder="Add a comment..." rows="3"></textarea>
+            <button id="btn-save-comment" class="btn-save-mini">Comment</button>
+          </div>
         </div>
 
         <div class="drawer-section">
@@ -309,6 +345,23 @@
               Due date <span class="hint">(optional)</span>
             </label>
             <input id="nt-due" type="date" />
+          </div>
+
+          <div class="field task-setup-grid">
+            <div>
+              <label>Workflow</label>
+              <select id="nt-workflow">
+                <option value="backlog">Backlog</option>
+                <option value="next">Next</option>
+                <option value="in_progress">In progress</option>
+                <option value="review">Review</option>
+                <option value="done">Done</option>
+              </select>
+            </div>
+            <div>
+              <label>Progress <span id="nt-progress-value" class="hint">0%</span></label>
+              <input id="nt-progress" type="range" min="0" max="100" step="5" value="0" />
+            </div>
           </div>
 
           <div class="field">

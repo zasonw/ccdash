@@ -46,6 +46,12 @@ A task belongs to one project and can have many labels.
 
 The interface uses a focused workspace theme with dark and light modes, accent color controls, compact 8px radii, crisp panels, task cards, and responsive mobile drawers. Most visual customization lives in `styles.css`.
 
+## Features
+
+- Projects can each have their own adjustable color.
+- Tasks support workflow stages, percentage progress, due dates, labels, notes, and comments.
+- Project progress is calculated from task percentages, while completed task counts remain visible in context.
+
 ## Responsive
 
 - Desktop ≥ 980px: three columns (folders / projects / tasks).
