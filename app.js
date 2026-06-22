@@ -36,6 +36,7 @@ const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 // ── State ────────────────────────────────────────────────────
 const S = {
   user: null,
+  device: { kind: "laptop", platform: "desktop", label: "Laptop workspace" },
   folders: [], projects: [], tasks: [], labels: [], comments: [],
   taskLabels: {},
   activeFolderId:  null,
@@ -69,6 +70,23 @@ function projectProgress(projectId) {
   return Math.round(tasks.reduce((sum, task) => sum + taskProgress(task), 0) / tasks.length);
 }
 
+function detectDeviceProfile() {
+  const ua = navigator.userAgent || "";
+  const mobileViewport = window.matchMedia("(max-width: 700px)").matches;
+  const coarsePointer = window.matchMedia("(pointer: coarse)").matches;
+  const mobileUA = /Android|iPhone|iPad|iPod|Mobile/i.test(ua);
+  const isMobile = mobileViewport || (coarsePointer && mobileUA);
+  const profile = isMobile
+    ? { kind: "mobile", platform: "ios", label: "iOS mobile workspace" }
+    : { kind: "laptop", platform: "desktop", label: "Laptop workspace" };
+  S.device = profile;
+  html.dataset.device = profile.kind;
+  html.dataset.platform = profile.platform;
+  const workspace = g("user-workspace");
+  if (workspace) workspace.textContent = profile.label;
+  return profile;
+}
+
 // ── Notification toast (replaces all alert() calls) ───────────
 let _notifTimer;
 const ICONS = {
@@ -87,6 +105,7 @@ function showNotif(msg, type = "error") {
   _notifTimer = setTimeout(() => toast.classList.add("hidden"), 6000);
 }
 document.addEventListener("DOMContentLoaded", () => {
+  detectDeviceProfile();
   g("notif-close").onclick = () => {
     clearTimeout(_notifTimer);
     g("notif-toast").classList.add("hidden");
@@ -103,6 +122,11 @@ document.addEventListener("DOMContentLoaded", () => {
     };
   });
 });
+window.addEventListener("resize", () => {
+  clearTimeout(window.__deviceProfileTimer);
+  window.__deviceProfileTimer = setTimeout(detectDeviceProfile, 120);
+});
+window.addEventListener("orientationchange", () => setTimeout(detectDeviceProfile, 120));
 
 // ── Due date helpers ─────────────────────────────────────────
 function dueBadge(dateStr) {
@@ -182,6 +206,7 @@ db.auth.onAuthStateChange((_e, session) => {
     const initial = (email[0] || "U").toUpperCase();
     g("user-avatar").textContent = initial;
     g("user-email").textContent  = email;
+    detectDeviceProfile();
     g("auth-overlay").classList.add("hidden");
     g("app").classList.remove("hidden");
     loadAll();

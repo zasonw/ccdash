@@ -2060,6 +2060,24 @@ textarea:focus-visible,
   transform: scale(.94);
 }
 
+.user-workspace {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  max-width: 100%;
+  min-height: 20px;
+  padding: 2px 7px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .035);
+}
+
+html[data-platform="ios"] .user-workspace {
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent-2) 34%, transparent);
+  background: var(--accent-soft);
+}
+
 .row-count,
 .task-percent,
 .project-progress-readout span,
