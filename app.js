@@ -384,13 +384,20 @@ function renderTasks() {
 
     // bottom row: chips + due date
     const lIds = S.taskLabels[t.id] || [];
-    const hasMeta = lIds.length || t.due_date;
+    const commentCount = S.comments.filter(c => c.task_id === t.id).length;
+    const hasMeta = lIds.length || t.due_date || commentCount;
     if (hasMeta) {
       const row = document.createElement("div");
       row.className = "task-chips";
       lIds.forEach(id => { const l = S.labels.find(x => x.id === id); if (l) row.appendChild(mkChip(l.name, false, null)); });
       const badge = dueBadge(t.due_date);
       if (badge) row.appendChild(badge);
+      if (commentCount) {
+        const comments = document.createElement("span");
+        comments.className = "due-badge comment-badge";
+        comments.textContent = `${commentCount} comment${commentCount === 1 ? "" : "s"}`;
+        row.appendChild(comments);
+      }
       li.appendChild(row);
     }
     ul.appendChild(li);
@@ -406,6 +413,10 @@ function buildRowItem(item, count, active, { onClick, onDelete }, isProject = fa
   li.onclick = onClick;
 
   const name = document.createElement("span"); name.className = "row-name"; name.textContent = item.name;
+  const swatch = document.createElement("span");
+  swatch.className = "row-color-dot";
+  swatch.setAttribute("aria-hidden", "true");
+  if (isProject) swatch.style.background = projectColor(item);
 
   // For projects: show done/total ratio instead of plain count
   const cnt = document.createElement("span"); cnt.className = "row-count";
@@ -429,6 +440,7 @@ function buildRowItem(item, count, active, { onClick, onDelete }, isProject = fa
   no.onclick  = e => { e.stopPropagation(); li.classList.remove("confirming"); };
   conf.appendChild(yes); conf.appendChild(no);
 
+  if (isProject) li.appendChild(swatch);
   li.appendChild(name); li.appendChild(cnt); li.appendChild(del); li.appendChild(conf);
 
   // Project progress bar (Mapbox-style usage bar)
@@ -445,8 +457,7 @@ function buildRowItem(item, count, active, { onClick, onDelete }, isProject = fa
     wrap.style.cssText = "display:flex;flex-direction:column;flex:1;min-width:0;gap:5px;";
     wrap.appendChild(name);
     wrap.appendChild(track);
-    li.insertBefore(wrap, li.firstChild);
-    li.removeChild(name); // name already appended to wrap
+    li.insertBefore(wrap, cnt);
   }
 
   return li;
