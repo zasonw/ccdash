@@ -237,6 +237,16 @@
           <button class="sort-chip" type="button" data-sort="due">Due date</button>
           <button class="sort-chip" type="button" data-sort="progress">Progress</button>
           <button class="sort-chip" type="button" data-sort="workflow">Workflow</button>
+          <div id="task-search-shell" class="task-search-shell" role="search">
+            <button id="btn-open-search" class="search-trigger" type="button" aria-label="Search tasks" aria-expanded="false">
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="7" cy="7" r="4.5" stroke="currentColor" stroke-width="1.6"/><path d="M10.5 10.5L14 14" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+              <span>Search</span>
+            </button>
+            <input id="task-search-input" type="search" placeholder="Search tasks, notes, workflow..." autocomplete="off" />
+            <button id="btn-clear-search" class="search-clear hidden" type="button" aria-label="Clear search">
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M9 3L3 9M3 3l6 6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+            </button>
+          </div>
           <span id="sort-feedback" class="sort-feedback">Newest first</span>
         </div>
         <div id="project-style-bar" class="project-style-bar hidden">

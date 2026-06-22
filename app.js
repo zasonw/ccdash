@@ -44,6 +44,8 @@ const S = {
   activeTaskId:    null,
   filterLabels:    new Set(),
   taskSort:        "created",
+  taskSearch:      "",
+  searchOpen:      false,
   pendingDelete:   null,
   // new-task modal selected labels
   modalLabels:     new Set(),
@@ -176,6 +178,43 @@ g("btn-clear-filters").onclick = () => {
   S.filterLabels.clear();
   renderTasks();
 };
+g("btn-open-search").onclick = () => {
+  setSearchOpen(true);
+  g("task-search-input").focus();
+};
+g("btn-clear-search").onclick = () => {
+  S.taskSearch = "";
+  g("task-search-input").value = "";
+  setSearchOpen(false);
+  renderTasks();
+};
+g("task-search-input").addEventListener("input", e => {
+  S.taskSearch = e.target.value.trim();
+  g("btn-clear-search").classList.toggle("hidden", !S.taskSearch);
+  renderTasks();
+});
+g("task-search-input").addEventListener("keydown", e => {
+  if (e.key === "Escape") {
+    S.taskSearch = "";
+    g("task-search-input").value = "";
+    setSearchOpen(false);
+    renderTasks();
+  }
+});
+document.addEventListener("click", e => {
+  const action = e.target.closest("[data-empty-action]")?.dataset.emptyAction;
+  if (!action) return;
+  if (action === "add-folder") g("btn-add-folder").click();
+  if (action === "add-project") g("btn-add-project").click();
+  if (action === "add-task") openNewTaskModal();
+  if (action === "clear-task-filters") {
+    S.filterLabels.clear();
+    S.taskSearch = "";
+    g("task-search-input").value = "";
+    setSearchOpen(false);
+    renderTasks();
+  }
+});
 // Close panel when clicking outside
 // Use trigger.contains() so clicks on the SVG *inside* the button don't count as "outside"
 document.addEventListener("click", (e) => {
@@ -267,11 +306,12 @@ async function loadAll() {
 // ── Render ────────────────────────────────────────────────────
 function renderAll() { renderFolders(); renderProjects(); renderTasks(); }
 
-function emptyState(icon, title, hint) {
+function emptyState(icon, title, hint, actions = "") {
   return `<div class="empty-state">
     <div class="empty-icon">${icon}</div>
     <strong>${title}</strong>
     <span>${hint}</span>
+    ${actions ? `<div class="empty-actions">${actions}</div>` : ""}
   </div>`;
 }
 
@@ -280,7 +320,9 @@ function renderFolders() {
   if (!S.folders.length) {
     ul.innerHTML = emptyState(
       `<svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M2 5.5A1.5 1.5 0 013.5 4h4l2 2h7A1.5 1.5 0 0118 7.5v8A1.5 1.5 0 0116.5 17h-13A1.5 1.5 0 012 15.5v-10z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>`,
-      "No folders yet", "Click + to create your first folder"
+      "No folders yet",
+      "Start with one broad area like Work, Personal, or Church.",
+      `<button type="button" data-empty-action="add-folder">Create folder</button>`
     );
     return;
   }
@@ -298,9 +340,9 @@ function renderProjects() {
   const folder = S.folders.find(f => f.id === S.activeFolderId);
   g("projects-label").textContent = folder ? folder.name : "Projects";
   g("btn-add-project").disabled = !folder;
-  if (!folder) { ul.innerHTML = emptyState(`<svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 4l6 4v8H4V8l6-4z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>`, "Pick a folder", "Select a folder on the left"); return; }
+  if (!folder) { ul.innerHTML = emptyState(`<svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 4l6 4v8H4V8l6-4z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>`, "Pick a folder", "Choose a folder to see its projects, or create a new area first.", S.folders.length ? "" : `<button type="button" data-empty-action="add-folder">Create folder</button>`); return; }
   const items = S.projects.filter(p => p.folder_id === folder.id);
-  if (!items.length) { ul.innerHTML = emptyState(`<svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="3" y="5" width="14" height="11" rx="1.5" stroke="currentColor" stroke-width="1.4"/><path d="M7 5V4a1 1 0 011-1h4a1 1 0 011 1v1" stroke="currentColor" stroke-width="1.4"/></svg>`, "No projects yet", "Click + to create one"); return; }
+  if (!items.length) { ul.innerHTML = emptyState(`<svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="3" y="5" width="14" height="11" rx="1.5" stroke="currentColor" stroke-width="1.4"/><path d="M7 5V4a1 1 0 011-1h4a1 1 0 011 1v1" stroke="currentColor" stroke-width="1.4"/></svg>`, "No projects yet", `Create a project inside ${folder.name} to group related tasks.`, `<button type="button" data-empty-action="add-project">Create project</button>`); return; }
   items.forEach(p => {
     const count = S.tasks.filter(t => t.project_id === p.id).length;
     ul.appendChild(buildRowItem(p, count, p.id === S.activeProjectId, {
@@ -349,6 +391,34 @@ function sortTasks(items) {
   return list.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 }
 
+function setSearchOpen(open) {
+  S.searchOpen = open;
+  const shell = g("task-search-shell");
+  shell.classList.toggle("open", open);
+  g("btn-open-search").setAttribute("aria-expanded", String(open));
+  g("btn-clear-search").classList.toggle("hidden", !S.taskSearch);
+}
+
+function taskMatchesSearch(task, query) {
+  if (!query) return true;
+  const q = query.toLowerCase();
+  const labels = (S.taskLabels[task.id] || [])
+    .map(id => S.labels.find(label => label.id === id)?.name || "")
+    .join(" ");
+  const comments = S.comments
+    .filter(comment => comment.task_id === task.id)
+    .map(comment => comment.body)
+    .join(" ");
+  const haystack = [
+    task.title,
+    task.notes,
+    WORKFLOW_LABELS[taskWorkflow(task)],
+    labels,
+    comments,
+  ].filter(Boolean).join(" ").toLowerCase();
+  return haystack.includes(q);
+}
+
 function renderTasks() {
   const ul = g("task-list"); ul.innerHTML = "";
   const project = S.projects.find(p => p.id === S.activeProjectId);
@@ -394,16 +464,21 @@ function renderTasks() {
   } else {
     sortBar.classList.add("hidden");
   }
+  setSearchOpen(!!S.taskSearch || S.searchOpen);
 
   if (!project) {
     g("tasks-overview").classList.add("hidden");
-    ul.innerHTML = emptyState(`<svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M5 10h10M5 6h10M5 14h6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>`, "Pick a project", "Select a project to see its tasks");
+    ul.innerHTML = emptyState(`<svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M5 10h10M5 6h10M5 14h6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>`, "Pick a project", "Select a project to see its tasks, progress, comments, and workflow.");
     return;
   }
 
   let items = S.tasks.filter(t => t.project_id === project.id);
   if (S.filterLabels.size) items = items.filter(t => [...S.filterLabels].every(id => (S.taskLabels[t.id]||[]).includes(id)));
+  if (S.taskSearch) items = items.filter(t => taskMatchesSearch(t, S.taskSearch));
   items = sortTasks(items);
+  if (S.filterLabels.size || S.taskSearch) {
+    g("sort-feedback").textContent = `${items.length} match${items.length === 1 ? "" : "es"} · ${SORT_LABELS[S.taskSort] || SORT_LABELS.created}`;
+  }
 
   // ── Overview stats (Mapbox usage bar) ──
   const allInProject = S.tasks.filter(t => t.project_id === project.id);
@@ -420,7 +495,13 @@ function renderTasks() {
     ov.classList.remove("hidden");
   } else { ov.classList.add("hidden"); }
 
-  if (!items.length) { ul.innerHTML = emptyState(`<svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="4" y="4" width="12" height="12" rx="2" stroke="currentColor" stroke-width="1.4"/><path d="M8 10l2 2 3-3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>`, "No tasks yet", "Click + to add your first task"); return; }
+  if (!items.length) {
+    const filtered = S.filterLabels.size || S.taskSearch;
+    ul.innerHTML = filtered
+      ? emptyState(`<svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M8.5 13a4.5 4.5 0 100-9 4.5 4.5 0 000 9zM12 12l4 4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>`, "No matching tasks", "Try a different search, remove a label filter, or clear everything to return to the full list.", `<button type="button" data-empty-action="clear-task-filters">Clear search and filters</button>`)
+      : emptyState(`<svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="4" y="4" width="12" height="12" rx="2" stroke="currentColor" stroke-width="1.4"/><path d="M8 10l2 2 3-3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>`, "No tasks yet", "Add the first task, then use workflow and progress to keep it moving.", `<button type="button" data-empty-action="add-task">Add task</button>`);
+    return;
+  }
 
   items.forEach(t => {
     const li = document.createElement("li");
