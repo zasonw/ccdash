@@ -2036,6 +2036,30 @@ textarea:focus-visible,
   height: 12px;
 }
 
+.project-row-color-input {
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  padding: 3px;
+  border: 1px solid var(--border-2);
+  border-radius: var(--r-xs);
+  background: var(--surface-3);
+  cursor: pointer;
+  opacity: .78;
+  transition: opacity var(--t-fast), transform var(--t-fast), border-color var(--t-fast), background var(--t-fast);
+}
+
+.project-row-color-input:hover,
+.project-row-color-input:focus-visible {
+  opacity: 1;
+  border-color: var(--project-color, var(--accent-2));
+  background: var(--surface-4);
+}
+
+.project-row-color-input:active {
+  transform: scale(.94);
+}
+
 .row-count,
 .task-percent,
 .project-progress-readout span,

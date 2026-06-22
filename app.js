@@ -417,6 +417,28 @@ function buildRowItem(item, count, active, { onClick, onDelete }, isProject = fa
   swatch.className = "row-color-dot";
   swatch.setAttribute("aria-hidden", "true");
   if (isProject) swatch.style.background = projectColor(item);
+  const colorPicker = document.createElement("input");
+  colorPicker.className = "project-row-color-input";
+  colorPicker.type = "color";
+  colorPicker.value = projectColor(item);
+  colorPicker.title = "Change project color";
+  colorPicker.setAttribute("aria-label", `Change color for ${item.name}`);
+  colorPicker.onclick = e => e.stopPropagation();
+  colorPicker.oninput = e => {
+    e.stopPropagation();
+    item.color = e.target.value;
+    li.style.setProperty("--project-color", item.color);
+    swatch.style.background = item.color;
+    if (S.activeProjectId === item.id) {
+      g("tasks-pane").style.setProperty("--project-color", item.color);
+      g("project-style-bar").style.setProperty("--project-color", item.color);
+      g("project-color-input").value = item.color;
+    }
+  };
+  colorPicker.onchange = e => {
+    e.stopPropagation();
+    saveProjectColor(item, e.target.value);
+  };
 
   // For projects: show done/total ratio instead of plain count
   const cnt = document.createElement("span"); cnt.className = "row-count";
@@ -442,6 +464,7 @@ function buildRowItem(item, count, active, { onClick, onDelete }, isProject = fa
 
   if (isProject) li.appendChild(swatch);
   li.appendChild(name); li.appendChild(cnt); li.appendChild(del); li.appendChild(conf);
+  if (isProject) li.appendChild(colorPicker);
 
   // Project progress bar (Mapbox-style usage bar)
   if (isProject && count > 0) {
@@ -625,14 +648,22 @@ g("project-color-input").addEventListener("input", e => {
 });
 g("project-color-input").addEventListener("change", async e => {
   const p = S.projects.find(x => x.id === S.activeProjectId); if (!p) return;
-  const color = e.target.value;
-  const { error } = await db.from("projects").update({ color }).eq("id", p.id);
+  saveProjectColor(p, e.target.value);
+});
+async function saveProjectColor(project, color) {
+  const { error } = await db.from("projects").update({ color }).eq("id", project.id);
   if (error) {
+    if (missingDbFeature(error)) {
+      showNotif("Project colors unavailable — run the updated schema.sql in Supabase.", "warn");
+      return;
+    }
     showNotif(error.message);
     return;
   }
-  p.color = color;
-});
+  project.color = color;
+  renderProjects();
+  renderTasks();
+}
 async function deleteProject(p) {
   const { error } = await db.from("projects").delete().eq("id", p.id);
   if (error) return showNotif(error.message);
