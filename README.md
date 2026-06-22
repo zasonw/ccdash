@@ -42,6 +42,10 @@ npx serve .
 
 A task belongs to one project and can have many labels.
 
+## Style
+
+The interface uses a focused workspace theme with dark and light modes, accent color controls, compact 8px radii, crisp panels, task cards, and responsive mobile drawers. Most visual customization lives in `styles.css`.
+
 ## Responsive
 
 - Desktop ≥ 980px: three columns (folders / projects / tasks).
