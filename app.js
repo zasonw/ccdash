@@ -72,6 +72,17 @@ document.addEventListener("DOMContentLoaded", () => {
     clearTimeout(_notifTimer);
     g("notif-toast").classList.add("hidden");
   };
+  document.querySelectorAll(".password-toggle").forEach(btn => {
+    const input = g(btn.dataset.target);
+    btn.onclick = () => {
+      const showing = input.type === "text";
+      input.type = showing ? "password" : "text";
+      btn.classList.toggle("showing", !showing);
+      btn.setAttribute("aria-label", showing ? "Show password" : "Hide password");
+      btn.setAttribute("aria-pressed", String(!showing));
+      input.focus();
+    };
+  });
 });
 
 // ── Due date helpers ─────────────────────────────────────────

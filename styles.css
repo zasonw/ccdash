@@ -1661,3 +1661,46 @@ html[data-theme="light"] .task-list li.task-row:hover {
     border-radius: 8px;
   }
 }
+
+.password-field {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.password-field input {
+  width: 100%;
+  padding-right: 46px;
+}
+
+.password-toggle {
+  position: absolute;
+  right: 8px;
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  color: var(--text-3);
+  border-radius: var(--r-xs);
+  transition: background var(--t-fast), color var(--t-fast), transform var(--t-fast);
+}
+
+.password-toggle:hover,
+.password-toggle:focus-visible {
+  background: var(--surface-3);
+  color: var(--text);
+  outline: none;
+}
+
+.password-toggle:active {
+  transform: scale(.92);
+}
+
+.password-toggle .eye-off,
+.password-toggle.showing .eye-on {
+  display: none;
+}
+
+.password-toggle.showing .eye-off {
+  display: block;
+}
