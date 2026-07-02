@@ -2486,3 +2486,251 @@ html[data-platform="ios"] .user-workspace {
     min-height: 0;
   }
 }
+
+/* Cozy warm pass: soft command center */
+:root {
+  --bg: #151018;
+  --surface: rgba(31, 25, 31, .96);
+  --surface-2: rgba(38, 31, 37, .94);
+  --surface-3: rgba(49, 40, 47, .92);
+  --surface-4: rgba(62, 51, 58, .9);
+  --surface-hover: rgba(255, 221, 184, .07);
+  --border: rgba(255, 214, 170, .11);
+  --border-2: rgba(255, 214, 170, .2);
+  --border-3: rgba(255, 214, 170, .32);
+  --text: #fff7ef;
+  --text-2: #dacdc0;
+  --text-3: #a9978e;
+  --muted: #a9978e;
+  --accent: #f2c96d;
+  --accent-2: #f59e8f;
+  --accent-3: #7dd3a8;
+  --accent-soft: rgba(242, 201, 109, .14);
+  --accent-strong: #ffe0a1;
+  --good: #7dd3a8;
+  --warn: #f2c96d;
+  --danger: #f08a9a;
+  --info: #8ab8ff;
+  --shadow: 0 24px 70px rgba(6, 4, 8, .42);
+  --shadow-soft: 0 16px 42px rgba(9, 6, 10, .3);
+  --focus-ring: 0 0 0 3px rgba(242, 201, 109, .25);
+}
+
+html[data-theme="light"] {
+  --bg: #fbf8f4;
+  --surface: rgba(255, 253, 249, .96);
+  --surface-2: rgba(250, 244, 238, .95);
+  --surface-3: rgba(244, 235, 228, .95);
+  --surface-4: rgba(236, 226, 219, .96);
+  --surface-hover: rgba(210, 125, 105, .08);
+  --border: rgba(93, 68, 58, .11);
+  --border-2: rgba(93, 68, 58, .18);
+  --border-3: rgba(93, 68, 58, .28);
+  --text: #2b2025;
+  --text-2: #66565d;
+  --text-3: #8c7d80;
+  --muted: #8c7d80;
+  --accent: #b16a29;
+  --accent-2: #d66f65;
+  --accent-3: #4f9f7a;
+  --accent-soft: rgba(214, 111, 101, .12);
+  --accent-strong: #7f4318;
+  --shadow: 0 24px 62px rgba(67, 44, 34, .13);
+  --shadow-soft: 0 14px 32px rgba(67, 44, 34, .1);
+}
+
+html[data-accent="blue"] {
+  --accent: #8ab8ff;
+  --accent-2: #e7a0be;
+  --accent-3: #7dd3a8;
+  --accent-soft: rgba(138, 184, 255, .14);
+}
+
+html[data-accent="amber"] {
+  --accent: #f2c96d;
+  --accent-2: #f59e8f;
+  --accent-3: #8bd0b0;
+  --accent-soft: rgba(242, 201, 109, .14);
+}
+
+body {
+  background:
+    linear-gradient(125deg, rgba(242, 201, 109, .12), transparent 30%),
+    linear-gradient(235deg, rgba(125, 211, 168, .1), transparent 35%),
+    linear-gradient(180deg, rgba(245, 158, 143, .1), transparent 42%),
+    var(--bg);
+}
+
+body::before {
+  opacity: .48;
+  background-image:
+    linear-gradient(rgba(255, 226, 190, .05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 226, 190, .05) 1px, transparent 1px);
+}
+
+.auth-card,
+.pane,
+.modal-card,
+.drawer-inner,
+.topbar,
+.sidebar,
+.mobile-panel,
+.detail-card,
+.project-style-bar,
+.drawer-meta-row,
+.comment-form {
+  border-color: var(--border);
+  box-shadow: var(--shadow-soft);
+}
+
+.auth-card,
+.pane,
+.modal-card,
+.drawer-inner,
+.mobile-panel {
+  background:
+    linear-gradient(155deg, rgba(255, 245, 225, .045), transparent 42%),
+    linear-gradient(335deg, rgba(125, 211, 168, .04), transparent 40%),
+    var(--surface);
+}
+
+.topbar,
+.sidebar,
+.drawer-top,
+.drawer-actions,
+.modal-foot {
+  background: color-mix(in srgb, var(--surface) 92%, transparent);
+}
+
+.logo-mark,
+.user-avatar,
+.btn-primary,
+.btn-primary-sm,
+.inline-confirm,
+.btn-save-mini,
+.toast-btn-confirm,
+.empty-actions button,
+.sort-chip.active,
+.filter-bar .chip.on {
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  color: #25151b;
+  box-shadow: 0 12px 28px rgba(242, 201, 109, .22);
+}
+
+.btn-primary:hover,
+.btn-primary-sm:hover,
+.inline-confirm:hover,
+.btn-save-mini:hover,
+.empty-actions button:hover,
+.sort-chip.active:hover,
+.filter-bar .chip.on:hover {
+  filter: saturate(1.06) brightness(1.03);
+}
+
+.nav-tabs,
+.filter-bar,
+.sort-bar,
+.task-search-shell,
+.project-style-bar,
+.comment-form,
+.drawer-meta-row {
+  background:
+    linear-gradient(135deg, rgba(255, 231, 199, .045), transparent 62%),
+    var(--surface-2);
+}
+
+.tab.active,
+.nav-item.active,
+.project-item.active,
+.workflow-chip,
+.due-badge,
+.comment-badge {
+  background: rgba(242, 201, 109, .12);
+  border-color: rgba(242, 201, 109, .24);
+  color: var(--text);
+}
+
+.chip,
+.sort-chip,
+.task-search-toggle,
+.icon-button,
+.theme-button,
+.project-color-control,
+input,
+select,
+textarea {
+  background: rgba(255, 247, 239, .045);
+  border-color: var(--border);
+}
+
+input:focus,
+select:focus,
+textarea:focus,
+.chip:focus-visible,
+.sort-chip:focus-visible,
+.task-search-toggle:focus-visible,
+.icon-button:focus-visible,
+.theme-button:focus-visible,
+.project-color-control:focus-within {
+  border-color: color-mix(in srgb, var(--accent) 62%, var(--border));
+  box-shadow: var(--focus-ring);
+}
+
+.task-list li.task-row,
+.item-list li.row-item,
+.comment-item,
+.empty-state {
+  background:
+    linear-gradient(135deg, rgba(255, 231, 199, .04), transparent 56%),
+    rgba(255, 255, 255, .025);
+  border-color: var(--border);
+}
+
+.task-list li.task-row:hover,
+.item-list li.row-item:hover,
+.comment-item:hover {
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--project-color, var(--accent-2)) 13%, transparent), transparent 55%),
+    linear-gradient(90deg, rgba(125, 211, 168, .055), transparent 75%),
+    var(--surface-hover);
+  border-color: var(--border-2);
+}
+
+.task-search-shell.open {
+  background:
+    linear-gradient(135deg, rgba(242, 201, 109, .11), rgba(245, 158, 143, .055)),
+    var(--surface-2);
+  border-color: rgba(242, 201, 109, .34);
+}
+
+.task-progress-fill,
+.project-progress-readout .meter-fill,
+.progress-fill,
+.stat-meter-fill {
+  background: linear-gradient(90deg, var(--accent-3), var(--accent), var(--accent-2));
+}
+
+.status-dot,
+.online-dot,
+.priority-dot {
+  box-shadow: 0 0 0 4px rgba(242, 201, 109, .13);
+}
+
+.empty-state {
+  outline: 1px solid rgba(242, 201, 109, .08);
+}
+
+.empty-state h3,
+.pane-title,
+.drawer-title,
+.task-name {
+  color: var(--text);
+}
+
+.empty-state p,
+.sort-feedback,
+.task-meta,
+.drawer-section p,
+.comment-meta {
+  color: var(--text-2);
+}

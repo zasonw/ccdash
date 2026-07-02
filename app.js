@@ -3,7 +3,7 @@ const html = document.documentElement;
 
 function initAppearance() {
   const theme  = localStorage.getItem("tb-theme")  || "dark";
-  const accent = localStorage.getItem("tb-accent") || "blue";
+  const accent = localStorage.getItem("tb-accent") || "amber";
   applyTheme(theme);
   applyAccent(accent);
 }
