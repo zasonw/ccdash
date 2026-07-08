@@ -2734,3 +2734,335 @@ textarea:focus,
 .comment-meta {
   color: var(--text-2);
 }
+
+/* Taste pass: cozy product dashboard rhythm */
+:root {
+  --app-gutter: 14px;
+  --pane-radius: 12px;
+  --panel-line: rgba(255, 214, 170, .13);
+  --panel-line-strong: rgba(255, 214, 170, .22);
+  --panel-tint: rgba(255, 239, 218, .035);
+  --panel-tint-strong: rgba(255, 239, 218, .07);
+}
+
+html[data-theme="light"] {
+  --panel-line: rgba(83, 58, 48, .11);
+  --panel-line-strong: rgba(83, 58, 48, .2);
+  --panel-tint: rgba(120, 76, 58, .035);
+  --panel-tint-strong: rgba(120, 76, 58, .07);
+}
+
+.app {
+  background:
+    linear-gradient(180deg, rgba(255, 240, 218, .055), transparent 28%),
+    linear-gradient(90deg, rgba(125, 211, 168, .04), transparent 38%),
+    transparent;
+}
+
+.layout {
+  grid-template-columns: minmax(248px, 296px) minmax(286px, 336px) minmax(0, 1fr);
+  gap: var(--app-gutter);
+  padding: var(--app-gutter);
+}
+
+.pane {
+  border-radius: var(--pane-radius);
+  border: 1px solid var(--panel-line);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 247, 236, .055),
+    0 18px 42px rgba(5, 3, 6, .26);
+}
+
+.pane::after {
+  opacity: .58;
+}
+
+.pane-head {
+  min-height: 68px;
+  padding: 16px 18px;
+  border-bottom: 1px solid var(--panel-line);
+  background:
+    linear-gradient(180deg, rgba(255, 239, 218, .055), rgba(255, 239, 218, .018)),
+    transparent;
+}
+
+.pane-label {
+  gap: 9px;
+  color: var(--text-2);
+  font-size: 11px;
+  letter-spacing: .075em;
+}
+
+.pane-label svg {
+  color: var(--accent);
+  filter: drop-shadow(0 0 10px rgba(242, 201, 109, .12));
+}
+
+.tasks-pane-head {
+  padding: 16px 18px;
+}
+
+.sidebar-user {
+  min-height: 116px;
+  padding: 22px 18px;
+  border-bottom: 1px solid var(--panel-line);
+  background:
+    linear-gradient(135deg, rgba(242, 201, 109, .09), transparent 44%),
+    linear-gradient(180deg, rgba(255, 247, 239, .04), transparent);
+}
+
+.user-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .34),
+    0 16px 32px rgba(242, 201, 109, .12);
+}
+
+.user-info {
+  gap: 4px;
+}
+
+.user-email {
+  max-width: 122px;
+  color: var(--text);
+  font-size: 13px;
+}
+
+.user-workspace {
+  width: fit-content;
+  max-width: 132px;
+  padding: 4px 9px;
+  border: 1px solid var(--panel-line);
+  border-radius: 999px;
+  background: rgba(255, 247, 239, .045);
+  color: var(--text-3);
+}
+
+.user-signout {
+  width: 34px;
+  height: 34px;
+  border: 1px solid transparent;
+}
+
+.user-signout:hover {
+  border-color: var(--panel-line-strong);
+  background: rgba(255, 247, 239, .06);
+}
+
+.btn-icon-add {
+  width: 42px;
+  height: 42px;
+  border-radius: 9px;
+  color: var(--text-2);
+  background:
+    linear-gradient(180deg, rgba(255, 247, 239, .06), rgba(255, 247, 239, .02)),
+    rgba(255, 247, 239, .035);
+  border-color: var(--panel-line-strong);
+  box-shadow: inset 0 1px 0 rgba(255, 247, 239, .09);
+}
+
+.btn-icon-add:hover:not(:disabled) {
+  color: #25151b;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  border-color: transparent;
+  transform: translateY(-1px);
+}
+
+.btn-primary,
+.btn-primary-sm,
+.empty-actions button {
+  border-radius: 10px;
+  letter-spacing: 0;
+}
+
+.btn-primary-sm {
+  min-height: 38px;
+  padding: 8px 14px;
+}
+
+.item-list {
+  padding: 14px;
+  gap: 7px;
+}
+
+.item-list li.row-item {
+  min-height: 42px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(255, 247, 239, .018);
+}
+
+.item-list li.row-item:hover {
+  background:
+    linear-gradient(90deg, rgba(242, 201, 109, .085), transparent 70%),
+    rgba(255, 247, 239, .04);
+  border-color: var(--panel-line-strong);
+  box-shadow: inset 0 1px 0 rgba(255, 247, 239, .06);
+}
+
+.item-list li.row-item.active {
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--project-color, var(--accent)) 14%, transparent), transparent 72%),
+    rgba(255, 247, 239, .055);
+  border-color: color-mix(in srgb, var(--accent) 34%, var(--panel-line));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 247, 239, .08),
+    0 10px 24px rgba(5, 3, 6, .14);
+}
+
+.row-count {
+  padding: 2px 8px;
+  border: 1px solid var(--panel-line);
+  background: rgba(255, 247, 239, .045);
+  box-shadow: none;
+}
+
+.empty-state {
+  width: min(100%, 310px);
+  max-width: 310px;
+  margin: clamp(28px, 16vh, 118px) auto auto;
+  padding: 30px 24px;
+  border: 1px solid var(--panel-line);
+  border-radius: 14px;
+  background:
+    linear-gradient(145deg, rgba(255, 247, 239, .075), rgba(255, 247, 239, .018) 58%),
+    linear-gradient(315deg, rgba(125, 211, 168, .045), transparent 50%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 247, 239, .09),
+    0 18px 40px rgba(5, 3, 6, .18);
+  outline: 0;
+}
+
+.pane-folders .empty-state {
+  margin-top: clamp(40px, 18vh, 140px);
+}
+
+.pane-tasks .empty-state {
+  width: min(100%, 382px);
+  max-width: 382px;
+  margin-top: clamp(76px, 25vh, 230px);
+  padding: 36px 30px;
+}
+
+.empty-state .empty-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  background:
+    linear-gradient(145deg, rgba(242, 201, 109, .12), rgba(245, 158, 143, .06)),
+    rgba(255, 247, 239, .035);
+  border: 1px solid var(--panel-line-strong);
+  color: var(--text-2);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 247, 239, .12),
+    0 14px 28px rgba(5, 3, 6, .16);
+}
+
+.empty-state strong {
+  color: var(--text);
+  font-size: 17px;
+  letter-spacing: -.01em;
+}
+
+.empty-state span {
+  max-width: 28ch;
+  color: var(--text-2);
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+.empty-actions {
+  margin-top: 10px;
+}
+
+.empty-actions button {
+  min-height: 42px;
+  padding: 9px 18px;
+  color: #25151b;
+}
+
+.tasks-overview,
+.filter-bar,
+.sort-bar,
+.project-style-bar {
+  border-bottom: 1px solid var(--panel-line);
+}
+
+.sort-bar {
+  padding: 12px 16px;
+}
+
+.sort-chip,
+.chip,
+.task-search-shell {
+  border-radius: 9px;
+}
+
+.task-list li.task-row {
+  border-radius: 12px;
+  border-color: var(--panel-line);
+  box-shadow: inset 0 1px 0 rgba(255, 247, 239, .045);
+}
+
+.task-list li.task-row:hover {
+  border-color: color-mix(in srgb, var(--project-color, var(--accent)) 28%, var(--panel-line));
+  transform: translateY(-1px);
+}
+
+@media (min-width: 1280px) {
+  .layout {
+    grid-template-columns: 296px 336px minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 980px) {
+  .layout {
+    grid-template-columns: minmax(220px, 280px) minmax(0, 1fr);
+    gap: 10px;
+    padding: 10px;
+  }
+}
+
+@media (max-width: 700px) {
+  .layout {
+    padding: 8px;
+  }
+
+  .pane-head,
+  .tasks-pane-head {
+    min-height: 58px;
+    padding: 12px 14px;
+  }
+
+  .sidebar-user {
+    min-height: 96px;
+    padding: 16px 14px;
+  }
+
+  .empty-state,
+  .pane-folders .empty-state,
+  .pane-tasks .empty-state {
+    width: 100%;
+    margin-top: 24px;
+    padding: 26px 20px;
+  }
+}
+
+.sidebar-user {
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr) 34px 34px;
+  column-gap: 10px;
+  align-items: center;
+}
+
+.user-info {
+  max-width: none;
+  justify-content: center;
+  gap: 0;
+}
+
+.user-email {
+  max-width: none;
+}
