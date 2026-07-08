@@ -28,10 +28,38 @@ function toggleStylePanel() {
 initAppearance();
 
 // ── Config ──────────────────────────────────────────────────
-const SUPABASE_URL      = "https://wgfdozmroijxubuiifjg.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndnZmRvem1yb2lqeHVidWlpZmpnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA1NzIxODgsImV4cCI6MjA5NjE0ODE4OH0.2HFVufskP_O8YvYJiUdxT6cooi0YC21lFxvt4-qpIP4";
+const SUPABASE_PROJECT_REF = "yrlqptrccpgflqalivqb";
+const SUPABASE_URL         = `https://${SUPABASE_PROJECT_REF}.supabase.co`;
+const SUPABASE_ANON_KEY    = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlybHFwdHJjY3BnZmxxYWxpdnFiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA0OTMyNTksImV4cCI6MjA5NjA2OTI1OX0.Vj-Ib7hi-5gbGsV7ZXo32YJZ6cVLcv-LX8SLsT88RVk";
+
+function decodeJwtPayload(token) {
+  try {
+    const payload = token.split(".")[1];
+    if (!payload) return null;
+    const normalized = payload.replace(/-/g, "+").replace(/_/g, "/");
+    const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, "=");
+    return JSON.parse(atob(padded));
+  } catch {
+    return null;
+  }
+}
+
+function supabaseConfigIssue() {
+  if (!SUPABASE_URL.includes(`${SUPABASE_PROJECT_REF}.supabase.co`)) {
+    return "Supabase URL is not pointed at the linked project.";
+  }
+  if (!SUPABASE_ANON_KEY || SUPABASE_ANON_KEY.includes("PASTE_YOUR")) {
+    return "Supabase key missing. Paste the anon/publishable key for project yrlqptrccpgflqalivqb in app.js.";
+  }
+  const payload = decodeJwtPayload(SUPABASE_ANON_KEY);
+  if (payload?.ref && payload.ref !== SUPABASE_PROJECT_REF) {
+    return `Supabase key/project mismatch. This key is for ${payload.ref}, but the app is using ${SUPABASE_PROJECT_REF}.`;
+  }
+  return "";
+}
 
 const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const SUPABASE_CONFIG_ISSUE = supabaseConfigIssue();
 
 // ── State ────────────────────────────────────────────────────
 const S = {
@@ -242,6 +270,7 @@ async function doAuth(mode) {
   const btn      = g(isSignup ? "btn-signup"  : "btn-signin");
   msgEl.textContent = ""; msgEl.className = "auth-msg";
   if (!email || !password) { msgEl.textContent = "Please fill in both fields."; return; }
+  if (SUPABASE_CONFIG_ISSUE) { msgEl.textContent = SUPABASE_CONFIG_ISSUE; return; }
   setLoading(btn, true);
   const { error } = isSignup
     ? await db.auth.signUp({ email, password })

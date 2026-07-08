@@ -1,5 +1,5 @@
 -- ============================================================
--- Task Board schema - run this in Supabase SQL editor
+-- Task Board schema - run with `supabase db push`
 -- Hierarchy: User -> Folders -> Projects -> Tasks -> Labels
 -- ============================================================
 
